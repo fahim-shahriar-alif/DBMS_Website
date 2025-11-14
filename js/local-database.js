@@ -63,6 +63,8 @@ class LocalDatabase {
             formattedId = 40000 + nextId; // Start from 40001
         } else if (this.tableName === 'audit_reports') {
             formattedId = 50000 + nextId; // Start from 50001
+        } else if (this.tableName === 'institutions') {
+            formattedId = 60000 + nextId; // Start from 60001
         }
         
         const newRecord = {
