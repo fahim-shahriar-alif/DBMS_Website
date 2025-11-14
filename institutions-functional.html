@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institutions - ASA Data Server</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <style>
+        .action-buttons-inline {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-view {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">American Stock Association</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html" class="active">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="users-functional.html">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>🏛️ Institutions Management</h1>
+            <p>Manage financial institutions for audit reports and trade management</p>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom: 30px;">
+            <div class="stat-card">
+                <div class="stat-icon blue">🏛️</div>
+                <div class="stat-info">
+                    <h3>Total Institutions</h3>
+                    <p class="stat-number" id="totalInstitutions">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✅</div>
+                <div class="stat-info">
+                    <h3>Active Partners</h3>
+                    <p class="stat-number" id="activeInstitutions">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">🏢</div>
+                <div class="stat-info">
+                    <h3>Banks</h3>
+                    <p class="stat-number" id="bankCount">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">📋</div>
+                <div class="stat-info">
+                    <h3>Audit Firms</h3>
+                    <p class="stat-number" id="auditFirms">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search institutions..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add</button>
+                <button class="btn-edit" onclick="openEditModal()">✏️ Edit</button>
+                <button class="btn-remove" onclick="handleDelete()">🗑️ Remove</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>Institution ID</th>
+                        <th>Institution Name</th>
+                        <th>Type</th>
+                        <th>Contact Email</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">No institutions found. Click "+ Add"
+                            to create your first institution.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="institutionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Institution</h2>
+                <span class="close" onclick="closeModal('institutionModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="institutionForm">
+                    <input type="hidden" id="institution_id">
+
+                    <div class="form-group">
+                        <label for="institution_name">Institution Name *</label>
+                        <input type="text" id="institution_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="institution_type">Institution Type *</label>
+                        <select id="institution_type" required>
+                            <option value="">Select Type</option>
+                            <option value="Bank">Bank</option>
+                            <option value="Investment Firm">Investment Firm</option>
+                            <option value="Audit Firm">Audit Firm</option>
+                            <option value="Regulatory Body">Regulatory Body</option>
+                            <option value="Exchange">Exchange</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact_email">Contact Email</label>
+                        <input type="email" id="contact_email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea id="address" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal('institutionModal')">Cancel</button>
+                <button type="button" class="btn-save" onclick="handleSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/local-database.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
+        const db = new LocalDatabase('institutions');
+        let selectedRows = new Set();
+        let isEditMode = false;
+
+        // Initialize with sample data if empty
+        document.addEventListener('DOMContentLoaded', () => {
+            if (db.getAll().length === 0) {
+                // Add sample institutions
+                db.add({
+                    institution_name: 'Federal Reserve Bank',
+                    institution_type: 'Regulatory Body',
+                    contact_email: 'contact@federalreserve.gov',
+                    phone: '+1-202-452-3000',
+                    address: '20th Street and Constitution Avenue NW, Washington, DC 20551',
+                    status: 'Active'
+                });
+
+                db.add({
+                    institution_name: 'Goldman Sachs',
+                    institution_type: 'Investment Firm',
+                    contact_email: 'info@goldmansachs.com',
+                    phone: '+1-212-902-1000',
+                    address: '200 West Street, New York, NY 10282',
+                    status: 'Active'
+                });
+
+                db.add({
+                    institution_name: 'KPMG',
+                    institution_type: 'Audit Firm',
+                    contact_email: 'contact@kpmg.com',
+                    phone: '+1-212-758-9700',
+                    address: '345 Park Avenue, New York, NY 10154',
+                    status: 'Active'
+                });
+            }
+            loadInstitutions();
+        });
+
+        function loadInstitutions() {
+            const institutions = db.getAll();
+            renderTable(institutions);
+            updateStats(institutions);
+        }
+
+        function updateStats(institutions) {
+            const totalInstitutions = institutions.length;
+            const activeInstitutions = institutions.filter(inst => inst.status === 'Active').length;
+            const bankCount = institutions.filter(inst => inst.institution_type === 'Bank').length;
+            const auditFirms = institutions.filter(inst => inst.institution_type === 'Audit Firm').length;
+
+            document.getElementById('totalInstitutions').textContent = totalInstitutions;
+            document.getElementById('activeInstitutions').textContent = activeInstitutions;
+            document.getElementById('bankCount').textContent = bankCount;
+            document.getElementById('auditFirms').textContent = auditFirms;
+        }
+
+        function renderTable(institutions) {
+            const tbody = document.getElementById('tableBody');
+
+            if (institutions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No institutions found. Click "+ Add" to create your first institution.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = institutions.map(institution => `
+                <tr>
+                    <td><input type="checkbox" data-id="${institution.id}" onchange="toggleRowSelection(${institution.id}, this)"></td>
+                    <td>${institution.id}</td>
+                    <td>${institution.institution_name}</td>
+                    <td>${institution.institution_type}</td>
+                    <td>${institution.contact_email || '-'}</td>
+                    <td>${institution.phone || '-'}</td>
+                    <td>${institution.address || '-'}</td>
+                    <td><span class="badge badge-${institution.status.toLowerCase()}">${institution.status}</span></td>
+                    <td>
+                        <div class="action-buttons-inline">
+                            <button class="btn-small btn-edit" onclick="editSingleInstitution(${institution.id})" title="Edit">✏️</button>
+                            <button class="btn-small btn-delete" onclick="deleteSingleInstitution(${institution.id})" title="Delete">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim() === '') {
+                loadInstitutions();
+            } else {
+                const results = db.search(query);
+                renderTable(results);
+            }
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Add Institution';
+            document.getElementById('institutionForm').reset();
+            document.getElementById('institution_id').value = '';
+            document.getElementById('status').value = 'Active';
+            openModal('institutionModal');
+        }
+
+        function openEditModal() {
+            if (selectedRows.size !== 1) {
+                alert('Please select exactly one institution to edit');
+                return;
+            }
+
+            const id = Array.from(selectedRows)[0];
+            const institution = db.getById(id);
+
+            if (institution) {
+                isEditMode = true;
+                document.getElementById('modalTitle').textContent = 'Edit Institution';
+                document.getElementById('institution_id').value = institution.id;
+                document.getElementById('institution_name').value = institution.institution_name;
+                document.getElementById('institution_type').value = institution.institution_type;
+                document.getElementById('contact_email').value = institution.contact_email || '';
+                document.getElementById('phone').value = institution.phone || '';
+                document.getElementById('address').value = institution.address || '';
+                document.getElementById('status').value = institution.status;
+                openModal('institutionModal');
+            }
+        }
+
+        function handleSave() {
+            const data = {
+                institution_name: document.getElementById('institution_name').value,
+                institution_type: document.getElementById('institution_type').value,
+                contact_email: document.getElementById('contact_email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                status: document.getElementById('status').value
+            };
+
+            if (isEditMode) {
+                const id = document.getElementById('institution_id').value;
+                db.update(id, data);
+                alert('Institution updated successfully!');
+            } else {
+                db.add(data);
+                alert('Institution added successfully!');
+            }
+
+            closeModal('institutionModal');
+            loadInstitutions();
+            clearSelections();
+        }
+
+        function handleDelete() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select at least one institution to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${selected.length} institution(s)?`)) {
+                return;
+            }
+
+            const deleted = db.deleteMultiple(selected);
+            alert(`${deleted} institution(s) deleted successfully!`);
+            loadInstitutions();
+            clearSelections();
+        }
+
+        // Relationship viewing functions
+        function viewAuditReports(institutionId) {
+            window.location.href = `audit-reports-functional.html?institution_id=${institutionId}`;
+        }
+
+        function viewTrades(institutionId) {
+            window.location.href = `trades-functional.html?institution_id=${institutionId}`;
+        }
+
+        // Utility functions
+        function toggleRowSelection(id, checkbox) {
+            if (checkbox.checked) {
+                selectedRows.add(id);
+            } else {
+                selectedRows.delete(id);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+            selectedRows.clear();
+
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    const id = parseInt(cb.getAttribute('data-id'));
+                    selectedRows.add(id);
+                }
+            });
+        }
+
+        function clearSelections() {
+            selectedRows.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+        // Individual row actions
+        function editSingleInstitution(id) {
+            const institution = db.getById(id);
+            if (institution) {
+                isEditMode = true;
+                document.getElementById('modalTitle').textContent = 'Edit Institution';
+                document.getElementById('institution_id').value = institution.id;
+                document.getElementById('institution_name').value = institution.institution_name;
+                document.getElementById('institution_type').value = institution.institution_type;
+                document.getElementById('contact_email').value = institution.contact_email || '';
+                document.getElementById('phone').value = institution.phone || '';
+                document.getElementById('address').value = institution.address || '';
+                document.getElementById('status').value = institution.status;
+                openModal('institutionModal');
+            }
+        }
+
+        function deleteSingleInstitution(id) {
+            const institution = db.getById(id);
+            if (institution && confirm(`Are you sure you want to delete institution "${institution.institution_name}"?`)) {
+                db.delete(id);
+                alert('Institution deleted successfully!');
+                loadInstitutions();
+                clearSelections();
+            }
+        }
+    </script>
+</body>
+
+</html>

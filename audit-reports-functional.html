@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Reports - ASA Data Server</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">American Stock Association</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html" class="active">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="users-functional.html">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📋 Audit Reports Management</h1>
+            <p>Manage compliance audits, findings, and regulatory reports</p>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom: 30px;">
+            <div class="stat-card">
+                <div class="stat-icon blue">📋</div>
+                <div class="stat-info">
+                    <h3>Total Reports</h3>
+                    <p class="stat-number" id="totalReports">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✅</div>
+                <div class="stat-info">
+                    <h3>Approved</h3>
+                    <p class="stat-number" id="approvedReports">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">📝</div>
+                <div class="stat-info">
+                    <h3>In Review</h3>
+                    <p class="stat-number" id="draftReports">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">📊</div>
+                <div class="stat-info">
+                    <h3>Compliance Rate</h3>
+                    <p class="stat-number" id="complianceRate">0%</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search audit reports..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add Report</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>Report ID</th>
+                        <th>Company</th>
+                        <th>Auditor Name</th>
+                        <th>Audit Date</th>
+                        <th>Findings</th>
+                        <th>Risk Level</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px;">No audit reports found. Click "+ Add"
+                            to create your first audit report.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="auditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Audit Report</h2>
+                <span class="close" onclick="closeModal('auditModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="auditForm">
+                    <input type="hidden" id="audit_id">
+
+                    <div class="form-group">
+                        <label for="company_name">Company Name *</label>
+                        <input type="text" id="company_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="auditor_name">Auditor Name *</label>
+                        <input type="text" id="auditor_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="audit_date">Audit Date</label>
+                        <input type="date" id="audit_date">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="findings">Findings</label>
+                        <textarea id="findings" rows="4" placeholder="Enter audit findings..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="risk_level">Risk Level</label>
+                        <select id="risk_level">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Approved">Approved</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('auditModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="handleSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/local-database.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
+        const db = new LocalDatabase('audit_reports');
+        let selectedRows = new Set();
+        let isEditMode = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAudits();
+        });
+
+        function loadAudits() {
+            const audits = db.getAll();
+            renderTable(audits);
+        }
+
+        function renderTable(audits) {
+            const tbody = document.getElementById('tableBody');
+
+            if (audits.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px;">No audit reports found. Click "+ Add" to create your first audit report.</td></tr>';
+                return;
+            }
+
+            const riskColors = {
+                'Low': '#28a745',
+                'Medium': '#ffc107',
+                'High': '#fd7e14',
+                'Critical': '#dc3545'
+            };
+
+            tbody.innerHTML = audits.map(audit => `
+                <tr>
+                    <td><input type="checkbox" data-id="${audit.id}" onchange="toggleRowSelection(${audit.id}, this)"></td>
+                    <td>${audit.id}</td>
+                    <td><strong>${audit.company_name}</strong></td>
+                    <td>${audit.auditor_name}</td>
+                    <td>${audit.audit_date || '-'}</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${audit.findings || '-'}</td>
+                    <td><span class="badge" style="background: ${riskColors[audit.risk_level]}">${audit.risk_level}</span></td>
+                    <td><span class="badge badge-${audit.status.toLowerCase().replace(' ', '-')}">${audit.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim() === '') {
+                loadAudits();
+            } else {
+                const results = db.search(query);
+                renderTable(results);
+            }
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Add Audit Report';
+            document.getElementById('auditForm').reset();
+            document.getElementById('audit_id').value = '';
+            document.getElementById('audit_date').value = new Date().toISOString().split('T')[0];
+            openModal('auditModal');
+        }
+
+        function openEditModal() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select an audit report to edit');
+                return;
+            }
+            if (selected.length > 1) {
+                alert('Please select only one audit report to edit');
+                return;
+            }
+
+            isEditMode = true;
+            document.getElementById('modalTitle').textContent = 'Edit Audit Report';
+
+            const audit = db.getById(selected[0]);
+            if (audit) {
+                document.getElementById('audit_id').value = audit.id;
+                document.getElementById('company_name').value = audit.company_name;
+                document.getElementById('auditor_name').value = audit.auditor_name;
+                document.getElementById('audit_date').value = audit.audit_date || '';
+                document.getElementById('findings').value = audit.findings || '';
+                document.getElementById('risk_level').value = audit.risk_level;
+                document.getElementById('status').value = audit.status;
+                openModal('auditModal');
+            }
+        }
+
+        function handleSave() {
+            const data = {
+                company_name: document.getElementById('company_name').value,
+                auditor_name: document.getElementById('auditor_name').value,
+                audit_date: document.getElementById('audit_date').value,
+                findings: document.getElementById('findings').value,
+                risk_level: document.getElementById('risk_level').value,
+                status: document.getElementById('status').value
+            };
+
+            if (isEditMode) {
+                const id = document.getElementById('audit_id').value;
+                db.update(id, data);
+                alert('Audit report updated successfully!');
+            } else {
+                db.add(data);
+                alert('Audit report added successfully!');
+            }
+
+            closeModal('auditModal');
+            loadAudits();
+            clearSelections();
+        }
+
+        function handleDelete() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select at least one audit report to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${selected.length} audit report(s)?`)) {
+                return;
+            }
+
+            const deleted = db.deleteMultiple(selected);
+            alert(`${deleted} audit report(s) deleted successfully!`);
+            loadAudits();
+            clearSelections();
+        }
+
+        function toggleRowSelection(id, checkbox) {
+            if (checkbox.checked) {
+                selectedRows.add(id);
+            } else {
+                selectedRows.delete(id);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+            selectedRows.clear();
+
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    const id = parseInt(cb.getAttribute('data-id'));
+                    selectedRows.add(id);
+                }
+            });
+        }
+
+        function clearSelections() {
+            selectedRows.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+    </script>
+</body>
+
+</html>

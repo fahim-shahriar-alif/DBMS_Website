@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Companies - Admin Panel</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <style>
+        .action-buttons-inline {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-view {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        .relationship-modal {
+            max-width: 90%;
+            width: 1000px;
+        }
+
+        .relationship-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .relationship-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .stock-price {
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .no-stock {
+            color: #95a5a6;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">American Stock Association</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html" class="active">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="users-functional.html">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Companies Management</h1>
+            <p>Manage company details, sectors, and registration information</p>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search companies..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add</button>
+                <button class="btn-edit" onclick="openEditModal()">✏️ Edit</button>
+                <button class="btn-remove" onclick="handleDelete()">🗑️ Remove</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>Company ID</th>
+                        <th>Company Name</th>
+                        <th>Sector</th>
+                        <th>Stock Price</th>
+                        <th>Registration Number</th>
+                        <th>Contact Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="10" style="text-align: center; padding: 40px;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="companyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Company</h2>
+                <span class="close" onclick="closeModal('companyModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="companyForm">
+                    <input type="hidden" id="company_id">
+
+                    <div class="form-group">
+                        <label for="company_name">Company Name *</label>
+                        <input type="text" id="company_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sector">Sector</label>
+                        <input type="text" id="sector">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registration_number">Registration Number</label>
+                        <input type="text" id="registration_number">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact_email">Contact Email</label>
+                        <input type="email" id="contact_email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('companyModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="handleSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/local-database.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
+        // Initialize local database (stored on your device)
+        const db = new LocalDatabase('companies');
+        const stocksDb = new LocalDatabase('stocks');
+        let selectedRows = new Set();
+        let isEditMode = false;
+
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeSampleStocks();
+            loadCompanies();
+        });
+
+        // Initialize sample stocks for companies if they don't exist
+        function initializeSampleStocks() {
+            const companies = db.getAll();
+            const stocks = stocksDb.getAll();
+
+            companies.forEach(company => {
+                // Check if this company already has a stock
+                const existingStock = stocks.find(stock => stock.company_id == company.id);
+
+                if (!existingStock) {
+                    // Create a sample stock for this company
+                    const stockSymbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'CRM', 'ORCL'];
+                    const randomSymbol = stockSymbols[Math.floor(Math.random() * stockSymbols.length)] + Math.floor(Math.random() * 100);
+                    const randomPrice = (Math.random() * 500 + 50).toFixed(2); // Price between $50-$550
+
+                    stocksDb.add({
+                        company_id: company.id,
+                        symbol: randomSymbol,
+                        stock_name: company.company_name + ' Stock',
+                        current_price: randomPrice,
+                        total_shares: Math.floor(Math.random() * 10000000) + 1000000, // 1M-11M shares
+                        market_cap: (parseFloat(randomPrice) * (Math.floor(Math.random() * 10000000) + 1000000)).toFixed(2),
+                        change_percent: ((Math.random() - 0.5) * 10).toFixed(2), // ±5% change
+                        status: 'Active'
+                    });
+                }
+            });
+        }
+
+        // Load all companies
+        function loadCompanies() {
+            const companies = db.getAll();
+            renderTable(companies);
+        }
+
+        // Render table
+        function renderTable(companies) {
+            const tbody = document.getElementById('tableBody');
+            const stocksDb = new LocalDatabase('stocks');
+            const stocks = stocksDb.getAll();
+
+            if (companies.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">No companies found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = companies.map(company => {
+                // Find the stock for this company
+                const companyStock = stocks.find(stock => stock.company_id == company.id);
+                const stockPrice = companyStock ? `$${parseFloat(companyStock.current_price || 0).toFixed(2)}` : 'No Stock';
+                const priceClass = companyStock ? 'stock-price' : 'no-stock';
+
+                return `
+                <tr>
+                    <td><input type="checkbox" data-id="${company.id}" onchange="toggleRowSelection(${company.id}, this)"></td>
+                    <td>${company.id}</td>
+                    <td>${company.company_name}</td>
+                    <td>${company.sector || '-'}</td>
+                    <td class="${priceClass}">${stockPrice}</td>
+                    <td>${company.registration_number || '-'}</td>
+                    <td>${company.contact_email || '-'}</td>
+                    <td>${company.phone || '-'}</td>
+                    <td><span class="badge badge-${company.status.toLowerCase()}">${company.status}</span></td>
+                    <td>
+                        <div class="action-buttons-inline">
+                            <button class="btn-small btn-view" onclick="viewStocks(${company.id})" title="View Stocks">📈</button>
+                            <button class="btn-small btn-view" onclick="viewAuditReports(${company.id})" title="View Audit Reports">📋</button>
+                            <button class="btn-small btn-view" onclick="viewTransactions(${company.id})" title="View Transactions">💰</button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Search
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim() === '') {
+                loadCompanies();
+            } else {
+                const results = db.search(query);
+                renderTable(results);
+            }
+        }
+
+        // Open add modal
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Add Company';
+            document.getElementById('companyForm').reset();
+            document.getElementById('company_id').value = '';
+            openModal('companyModal');
+        }
+
+        // Open edit modal
+        function openEditModal() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select a company to edit');
+                return;
+            }
+            if (selected.length > 1) {
+                alert('Please select only one company to edit');
+                return;
+            }
+
+            isEditMode = true;
+            document.getElementById('modalTitle').textContent = 'Edit Company';
+
+            const company = db.getById(selected[0]);
+            if (company) {
+                document.getElementById('company_id').value = company.id;
+                document.getElementById('company_name').value = company.company_name;
+                document.getElementById('sector').value = company.sector || '';
+                document.getElementById('registration_number').value = company.registration_number || '';
+                document.getElementById('contact_email').value = company.contact_email || '';
+                document.getElementById('phone').value = company.phone || '';
+                document.getElementById('status').value = company.status;
+                openModal('companyModal');
+            }
+        }
+
+        // Save (Add or Update)
+        function handleSave() {
+            const data = {
+                company_name: document.getElementById('company_name').value,
+                sector: document.getElementById('sector').value,
+                registration_number: document.getElementById('registration_number').value,
+                contact_email: document.getElementById('contact_email').value,
+                phone: document.getElementById('phone').value,
+                status: document.getElementById('status').value
+            };
+
+            if (isEditMode) {
+                const id = document.getElementById('company_id').value;
+                db.update(id, data);
+                alert('Company updated successfully!');
+            } else {
+                db.add(data);
+                alert('Company added successfully!');
+            }
+
+            closeModal('companyModal');
+            loadCompanies();
+            clearSelections();
+        }
+
+        // Delete
+        function handleDelete() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select at least one company to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${selected.length} company(ies)?`)) {
+                return;
+            }
+
+            const deleted = db.deleteMultiple(selected);
+            alert(`${deleted} company(ies) deleted successfully!`);
+            loadCompanies();
+            clearSelections();
+        }
+
+        // Toggle row selection
+        function toggleRowSelection(id, checkbox) {
+            if (checkbox.checked) {
+                selectedRows.add(id);
+            } else {
+                selectedRows.delete(id);
+            }
+        }
+
+        // Toggle select all
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+            selectedRows.clear();
+
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    const id = parseInt(cb.getAttribute('data-id'));
+                    selectedRows.add(id);
+                }
+            });
+        }
+
+        // Clear selections
+        function clearSelections() {
+            selectedRows.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+        // Relationship viewing functions
+        function viewStocks(companyId) {
+            const company = db.getById(companyId);
+            const stocksDb = new LocalDatabase('stocks');
+            const stocks = stocksDb.getAll().filter(stock => stock.company_id == companyId);
+
+            showRelationshipModal('Stocks', company.company_name, stocks, [
+                { key: 'stock_symbol', label: 'Symbol' },
+                { key: 'stock_name', label: 'Stock Name' },
+                { key: 'current_price', label: 'Current Price' },
+                { key: 'market_cap', label: 'Market Cap' },
+                { key: 'status', label: 'Status' }
+            ], () => {
+                window.location.href = 'stocks-functional.html?company_id=' + companyId;
+            });
+        }
+
+        function viewAuditReports(companyId) {
+            const company = db.getById(companyId);
+            const auditDb = new LocalDatabase('audit_reports');
+            const reports = auditDb.getAll().filter(report => report.company_id == companyId);
+
+            showRelationshipModal('Audit Reports', company.company_name, reports, [
+                { key: 'report_title', label: 'Report Title' },
+                { key: 'auditor_name', label: 'Auditor' },
+                { key: 'audit_date', label: 'Audit Date' },
+                { key: 'status', label: 'Status' }
+            ], () => {
+                window.location.href = 'audit-reports-functional.html?company_id=' + companyId;
+            });
+        }
+
+        function viewTransactions(companyId) {
+            const company = db.getById(companyId);
+            const transactionsDb = new LocalDatabase('stock_transactions');
+            const transactions = transactionsDb.getAll().filter(tx => tx.company_id == companyId);
+
+            showRelationshipModal('Stock Transactions', company.company_name, transactions, [
+                { key: 'transaction_type', label: 'Type' },
+                { key: 'quantity', label: 'Quantity' },
+                { key: 'price_per_share', label: 'Price/Share' },
+                { key: 'total_amount', label: 'Total Amount' },
+                { key: 'transaction_date', label: 'Date' }
+            ], () => {
+                window.location.href = 'transactions-functional.html?company_id=' + companyId;
+            });
+        }
+
+        function showRelationshipModal(title, companyName, data, columns, onManage) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+
+            modal.innerHTML = `
+                <div class="modal-content relationship-modal">
+                    <div class="modal-header">
+                        <h2>${title} for ${companyName}</h2>
+                        <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="relationship-header">
+                            <div class="relationship-stats">
+                                <div class="stat-box">
+                                    <div class="stat-number">${data.length}</div>
+                                    <div class="stat-label">Total ${title}</div>
+                                </div>
+                            </div>
+                            <button class="btn-add" onclick="(${onManage})()">Manage ${title}</button>
+                        </div>
+                        
+                        ${data.length === 0 ?
+                    `<p style="text-align: center; padding: 40px; color: #666;">No ${title.toLowerCase()} found for this company.</p>` :
+                    `<div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            ${columns.map(col => `<th>${col.label}</th>`).join('')}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.map(item => `
+                                            <tr>
+                                                ${columns.map(col => `<td>${item[col.key] || '-'}</td>`).join('')}
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>`
+                }
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Close modal when clicking outside
+            modal.onclick = function (event) {
+                if (event.target === modal) {
+                    modal.remove();
+                }
+            };
+        }
+    </script>
+</body>
+
+</html>

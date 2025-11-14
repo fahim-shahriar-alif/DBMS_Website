@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Stocks - Investor Portal</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/table.css">
+  <style>
+    .stock-action-btn {
+      padding: 8px 15px;
+      margin: 0 5px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .btn-buy {
+      background: #27ae60;
+      color: white;
+    }
+
+    .btn-buy:hover {
+      background: #229954;
+    }
+
+    .btn-sell {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-sell:hover {
+      background: #c0392b;
+    }
+
+    .btn-info {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>👤 Investor Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="investorName">Welcome, Investor</p>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="dashboard-investor.html">📊 Dashboard</a></li>
+      <li><a href="investor-portfolio.html">💼 My Portfolio</a></li>
+      <li><a href="investor-transactions.html">💰 My Transactions</a></li>
+      <li><a href="investor-stocks.html" class="active">📈 Browse Stocks</a></li>
+      <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1>📈 Browse Available Stocks</h1>
+      <p>View stock information and submit trade requests</p>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom: 30px;">
+      <div class="stat-card">
+        <div class="stat-icon blue">📈</div>
+        <div class="stat-info">
+          <h3>Available Stocks</h3>
+          <p class="stat-number" id="totalStocks">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📊</div>
+        <div class="stat-info">
+          <h3>Total Market Cap</h3>
+          <p class="stat-number" id="totalMarketCap">$0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">📈</div>
+        <div class="stat-info">
+          <h3>Avg Stock Price</h3>
+          <p class="stat-number" id="avgPrice">$0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">🔥</div>
+        <div class="stat-info">
+          <h3>Top Gainer</h3>
+          <p class="stat-number" id="topGainer">-</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-controls">
+      <div class="search-box">
+        <input type="text" placeholder="Search stocks..." id="searchInput">
+        <button class="btn-search" onclick="handleSearch()">Search</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Company</th>
+            <th>Current Price</th>
+            <th>Change %</th>
+            <th>Market Cap</th>
+            <th>Total Shares</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px;">Loading stocks...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script src="js/logout.js"></script>
+  <script>
+    let allStocks = [];
+
+    // Check if user is logged in and has Investor role
+    window.addEventListener('DOMContentLoaded', () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userRole = localStorage.getItem('userRole');
+      const userFullName = localStorage.getItem('userFullName');
+
+      if (!isLoggedIn || userRole !== 'Investor') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Display investor name
+      document.getElementById('investorName').textContent = `Welcome, ${userFullName}`;
+
+      // Load stocks
+      loadStocks();
+    });
+
+    function loadStocks() {
+      const stocksDb = new LocalDatabase('stocks');
+      const companiesDb = new LocalDatabase('companies');
+
+      allStocks = stocksDb.getAll().filter(stock => stock.status === 'Active');
+
+      // Update stats
+      updateStats(allStocks);
+
+      // Render table
+      renderTable(allStocks, companiesDb);
+    }
+
+    function updateStats(stocks) {
+      const totalStocks = stocks.length;
+      const totalMarketCap = stocks.reduce((sum, stock) => sum + parseFloat(stock.market_cap || 0), 0);
+      const avgPrice = stocks.length > 0 ? stocks.reduce((sum, stock) => sum + parseFloat(stock.current_price || 0), 0) / stocks.length : 0;
+      const topGainer = stocks.length > 0 ? stocks.reduce((prev, current) =>
+        parseFloat(current.change_percent || 0) > parseFloat(prev.change_percent || 0) ? current : prev
+      ) : null;
+
+      document.getElementById('totalStocks').textContent = totalStocks;
+      document.getElementById('totalMarketCap').textContent = '$' + totalMarketCap.toLocaleString();
+      document.getElementById('avgPrice').textContent = '$' + avgPrice.toFixed(2);
+      document.getElementById('topGainer').textContent = topGainer ? `${topGainer.symbol} (+${parseFloat(topGainer.change_percent).toFixed(2)}%)` : '-';
+    }
+
+    function renderTable(stocks, companiesDb) {
+      const tbody = document.getElementById('tableBody');
+
+      if (stocks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px;">No active stocks available.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = stocks.map(stock => {
+        const company = companiesDb.getById(stock.company_id);
+        const companyName = company ? company.company_name : 'Unknown Company';
+
+        const changePercent = parseFloat(stock.change_percent || 0);
+        const changeColor = changePercent >= 0 ? 'green' : 'red';
+        const changeSign = changePercent >= 0 ? '+' : '';
+
+        return `
+                    <tr>
+                        <td><strong style="font-size: 16px;">${stock.symbol}</strong></td>
+                        <td>${companyName}</td>
+                        <td><strong>$${parseFloat(stock.current_price).toFixed(2)}</strong></td>
+                        <td style="color: ${changeColor}; font-weight: bold;">
+                            ${changeSign}${changePercent.toFixed(2)}%
+                        </td>
+                        <td>$${parseFloat(stock.market_cap || 0).toLocaleString()}</td>
+                        <td>${parseInt(stock.total_shares || 0).toLocaleString()}</td>
+                        <td><span class="badge badge-success">${stock.status}</span></td>
+                        <td>
+                            <button class="stock-action-btn btn-buy" onclick="quickBuy(${stock.id}, '${stock.symbol}')">
+                                Buy
+                            </button>
+                            <button class="stock-action-btn btn-info" onclick="requestInfo(${stock.id}, '${stock.symbol}')">
+                                Info
+                            </button>
+                        </td>
+                    </tr>
+                `;
+      }).join('');
+    }
+
+    function handleSearch() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const companiesDb = new LocalDatabase('companies');
+
+      if (query.trim() === '') {
+        renderTable(allStocks, companiesDb);
+      } else {
+        const filtered = allStocks.filter(stock => {
+          const company = companiesDb.getById(stock.company_id);
+          const companyName = company ? company.company_name.toLowerCase() : '';
+          return stock.symbol.toLowerCase().includes(query) ||
+            stock.stock_name.toLowerCase().includes(query) ||
+            companyName.includes(query);
+        });
+        renderTable(filtered, companiesDb);
+      }
+    }
+
+    function quickBuy(stockId, symbol) {
+      const quantity = prompt(`How many shares of ${symbol} would you like to buy?`, '10');
+
+      if (quantity && parseInt(quantity) > 0) {
+        const userId = localStorage.getItem('userId');
+        const stocksDb = new LocalDatabase('stocks');
+        const stock = stocksDb.getById(stockId);
+
+        const transactionsDb = new LocalDatabase('stock_transactions');
+        const totalAmount = parseFloat(stock.current_price) * parseInt(quantity);
+
+        transactionsDb.add({
+          investor_id: userId,
+          company_id: stock.company_id,
+          stock_id: stockId,
+          transaction_type: 'Buy',
+          quantity: quantity,
+          price_per_share: stock.current_price,
+          total_amount: totalAmount.toFixed(2),
+          transaction_date: new Date().toISOString().split('T')[0],
+          status: 'Pending'
+        });
+
+        alert(`Buy request submitted successfully!\n\nStock: ${symbol}\nQuantity: ${quantity}\nEstimated Amount: $${totalAmount.toFixed(2)}\n\nYour request has been sent to the Manager for approval.`);
+      }
+    }
+
+    function requestInfo(stockId, symbol) {
+      const infoTypes = [
+        'Price History',
+        'Company Details',
+        'Market Analysis',
+        'AI Predictions',
+        'Financial Reports'
+      ];
+
+      const infoType = prompt(`Request information for ${symbol}:\n\n1. Price History\n2. Company Details\n3. Market Analysis\n4. AI Predictions\n5. Financial Reports\n\nEnter number (1-5):`, '1');
+
+      if (infoType && parseInt(infoType) >= 1 && parseInt(infoType) <= 5) {
+        const selectedType = infoTypes[parseInt(infoType) - 1];
+        alert(`Stock Information Request Submitted!\n\nStock: ${symbol}\nInformation Type: ${selectedType}\n\nThe Stock Management Team will provide the requested information shortly.`);
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleSearch();
+      }
+    });
+  </script>
+</body>
+
+</html>

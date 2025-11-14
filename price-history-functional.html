@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price History - ASA Data Server</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <style>
+        .price-positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .price-negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .price-neutral {
+            color: #666;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .price-chart {
+            width: 100%;
+            height: 300px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .stock-selector {
+            margin-bottom: 20px;
+        }
+
+        .stock-selector select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        .price-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">Price Monitoring</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="users-functional.html">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html" class="active">📊 Price History</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📊 Stock Price Monitoring</h1>
+            <p>Track daily stock price movements and historical data</p>
+        </div>
+
+        <div class="stock-selector">
+            <label for="stockSelect">Select Stock: </label>
+            <select id="stockSelect" onchange="loadPriceHistory()">
+                <option value="">Choose a stock...</option>
+            </select>
+        </div>
+
+        <div class="price-summary" id="priceSummary" style="display: none;">
+            <div class="summary-card">
+                <div class="summary-value" id="currentPrice">$0.00</div>
+                <div class="summary-label">Current Price</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" id="dayChange">$0.00</div>
+                <div class="summary-label">Day Change</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" id="weekHigh">$0.00</div>
+                <div class="summary-label">Week High</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" id="weekLow">$0.00</div>
+                <div class="summary-label">Week Low</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" id="avgVolume">0</div>
+                <div class="summary-label">Avg Volume</div>
+            </div>
+        </div>
+
+        <div class="chart-container" id="chartContainer" style="display: none;">
+            <h3>Price Chart</h3>
+            <div class="price-chart">
+                📈 Interactive price chart would be displayed here
+            </div>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search price history..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add Entry</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>Date</th>
+                        <th>Stock</th>
+                        <th>Opening Price</th>
+                        <th>Closing Price</th>
+                        <th>High Price</th>
+                        <th>Low Price</th>
+                        <th>Volume</th>
+                        <th>Change</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">Select a stock to view price history.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="priceHistoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Price Entry</h2>
+                <span class="close" onclick="closeModal('priceHistoryModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="priceHistoryForm">
+                    <input type="hidden" id="price_id">
+
+                    <div class="form-group">
+                        <label for="stock_id">Stock *</label>
+                        <select id="stock_id" required>
+                            <option value="">Select Stock</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">Date *</label>
+                        <input type="date" id="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="opening_price">Opening Price ($) *</label>
+                        <input type="number" id="opening_price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="closing_price">Closing Price ($) *</label>
+                        <input type="number" id="closing_price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="high_price">High Price ($) *</label>
+                        <input type="number" id="high_price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="low_price">Low Price ($) *</label>
+                        <input type="number" id="low_price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="volume">Volume</label>
+                        <input type="number" id="volume" min="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal('priceHistoryModal')">Cancel</button>
+                <button type="button" class="btn-save" onclick="handleSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/local-database.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
+        const db = new LocalDatabase('price_history');
+        const stocksDb = new LocalDatabase('stocks');
+        const companiesDb = new LocalDatabase('companies');
+        let selectedRows = new Set();
+        let isEditMode = false;
+        let currentStockId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStockOptions();
+            generateSampleData();
+
+            // Set default date to today
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        });
+
+        function loadStockOptions() {
+            const stocks = stocksDb.getAll();
+            const companies = companiesDb.getAll();
+
+            // Load stock selector
+            const stockSelect = document.getElementById('stockSelect');
+            stockSelect.innerHTML = '<option value="">Choose a stock...</option>';
+
+            // Load modal stock selector
+            const modalStockSelect = document.getElementById('stock_id');
+            modalStockSelect.innerHTML = '<option value="">Select Stock</option>';
+
+            stocks.forEach(stock => {
+                const company = companies.find(c => c.id == stock.company_id);
+                const companyName = company ? company.company_name : 'Unknown Company';
+                const displayText = `${stock.symbol} - ${companyName}`;
+
+                // Main selector
+                const option1 = document.createElement('option');
+                option1.value = stock.id;
+                option1.textContent = displayText;
+                stockSelect.appendChild(option1);
+
+                // Modal selector
+                const option2 = document.createElement('option');
+                option2.value = stock.id;
+                option2.textContent = displayText;
+                modalStockSelect.appendChild(option2);
+            });
+        }
+
+        function generateSampleData() {
+            const stocks = stocksDb.getAll();
+            if (stocks.length > 0 && db.getAll().length === 0) {
+                // Generate sample price history for the first stock
+                const stock = stocks[0];
+                let basePrice = parseFloat(stock.current_price) || 100;
+
+                for (let i = 30; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+
+                    // Generate realistic price movements
+                    const change = (Math.random() - 0.5) * 0.1; // ±5% change
+                    basePrice = Math.max(basePrice * (1 + change), 1);
+
+                    const opening = basePrice;
+                    const closing = basePrice * (1 + (Math.random() - 0.5) * 0.05);
+                    const high = Math.max(opening, closing) * (1 + Math.random() * 0.03);
+                    const low = Math.min(opening, closing) * (1 - Math.random() * 0.03);
+                    const volume = Math.floor(Math.random() * 1000000) + 100000;
+
+                    db.add({
+                        stock_id: stock.id,
+                        date: date.toISOString().split('T')[0],
+                        opening_price: opening.toFixed(2),
+                        closing_price: closing.toFixed(2),
+                        high_price: high.toFixed(2),
+                        low_price: low.toFixed(2),
+                        volume: volume
+                    });
+
+                    basePrice = closing;
+                }
+            }
+        }
+
+        function loadPriceHistory() {
+            const stockId = document.getElementById('stockSelect').value;
+            currentStockId = stockId;
+
+            if (!stockId) {
+                document.getElementById('tableBody').innerHTML =
+                    '<tr><td colspan="9" style="text-align: center; padding: 40px;">Select a stock to view price history.</td></tr>';
+                document.getElementById('priceSummary').style.display = 'none';
+                document.getElementById('chartContainer').style.display = 'none';
+                return;
+            }
+
+            const priceHistory = db.getAll().filter(p => p.stock_id == stockId);
+            renderTable(priceHistory);
+            updatePriceSummary(priceHistory);
+
+            document.getElementById('priceSummary').style.display = 'grid';
+            document.getElementById('chartContainer').style.display = 'block';
+        }
+
+        function renderTable(priceHistory) {
+            const tbody = document.getElementById('tableBody');
+            const stocks = stocksDb.getAll();
+
+            if (priceHistory.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No price history found for this stock.</td></tr>';
+                return;
+            }
+
+            // Sort by date descending
+            priceHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            tbody.innerHTML = priceHistory.map(price => {
+                const stock = stocks.find(s => s.id == price.stock_id);
+                const stockSymbol = stock ? stock.symbol : 'Unknown';
+
+                const opening = parseFloat(price.opening_price);
+                const closing = parseFloat(price.closing_price);
+                const change = closing - opening;
+                const changePercent = opening > 0 ? (change / opening * 100) : 0;
+
+                const changeClass = change > 0 ? 'price-positive' : change < 0 ? 'price-negative' : 'price-neutral';
+
+                return `
+                <tr>
+                    <td><input type="checkbox" data-id="${price.id}" onchange="toggleRowSelection(${price.id}, this)"></td>
+                    <td>${new Date(price.date).toLocaleDateString()}</td>
+                    <td><strong>${stockSymbol}</strong></td>
+                    <td>$${parseFloat(price.opening_price).toFixed(2)}</td>
+                    <td>$${parseFloat(price.closing_price).toFixed(2)}</td>
+                    <td>$${parseFloat(price.high_price).toFixed(2)}</td>
+                    <td>$${parseFloat(price.low_price).toFixed(2)}</td>
+                    <td>${parseInt(price.volume || 0).toLocaleString()}</td>
+                    <td class="${changeClass}">
+                        ${change >= 0 ? '+' : ''}$${change.toFixed(2)} (${changePercent.toFixed(2)}%)
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function updatePriceSummary(priceHistory) {
+            if (priceHistory.length === 0) return;
+
+            // Sort by date
+            const sorted = [...priceHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const latest = sorted[0];
+            const previous = sorted[1];
+
+            // Calculate week high/low
+            const weekData = sorted.slice(0, 7);
+            const weekHigh = Math.max(...weekData.map(p => parseFloat(p.high_price)));
+            const weekLow = Math.min(...weekData.map(p => parseFloat(p.low_price)));
+
+            // Calculate average volume
+            const avgVolume = weekData.reduce((sum, p) => sum + parseInt(p.volume || 0), 0) / weekData.length;
+
+            // Day change
+            const dayChange = previous ?
+                parseFloat(latest.closing_price) - parseFloat(previous.closing_price) : 0;
+
+            document.getElementById('currentPrice').textContent = `$${parseFloat(latest.closing_price).toFixed(2)}`;
+            document.getElementById('dayChange').textContent = `${dayChange >= 0 ? '+' : ''}$${dayChange.toFixed(2)}`;
+            document.getElementById('dayChange').className = `summary-value ${dayChange >= 0 ? 'price-positive' : 'price-negative'}`;
+            document.getElementById('weekHigh').textContent = `$${weekHigh.toFixed(2)}`;
+            document.getElementById('weekLow').textContent = `$${weekLow.toFixed(2)}`;
+            document.getElementById('avgVolume').textContent = Math.floor(avgVolume).toLocaleString();
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim() === '') {
+                loadPriceHistory();
+            } else {
+                const results = db.search(query);
+                const filtered = currentStockId ?
+                    results.filter(p => p.stock_id == currentStockId) : results;
+                renderTable(filtered);
+            }
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Add Price Entry';
+            document.getElementById('priceHistoryForm').reset();
+            document.getElementById('price_id').value = '';
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+            if (currentStockId) {
+                document.getElementById('stock_id').value = currentStockId;
+            }
+
+            openModal('priceHistoryModal');
+        }
+
+        function openEditModal() {
+            if (selectedRows.size !== 1) {
+                alert('Please select exactly one price entry to edit');
+                return;
+            }
+
+            const id = Array.from(selectedRows)[0];
+            const price = db.getById(id);
+
+            if (price) {
+                isEditMode = true;
+                document.getElementById('modalTitle').textContent = 'Edit Price Entry';
+                document.getElementById('price_id').value = price.id;
+                document.getElementById('stock_id').value = price.stock_id;
+                document.getElementById('date').value = price.date;
+                document.getElementById('opening_price').value = price.opening_price;
+                document.getElementById('closing_price').value = price.closing_price;
+                document.getElementById('high_price').value = price.high_price;
+                document.getElementById('low_price').value = price.low_price;
+                document.getElementById('volume').value = price.volume || '';
+                openModal('priceHistoryModal');
+            }
+        }
+
+        function handleSave() {
+            const data = {
+                stock_id: document.getElementById('stock_id').value,
+                date: document.getElementById('date').value,
+                opening_price: document.getElementById('opening_price').value,
+                closing_price: document.getElementById('closing_price').value,
+                high_price: document.getElementById('high_price').value,
+                low_price: document.getElementById('low_price').value,
+                volume: document.getElementById('volume').value || 0
+            };
+
+            // Validate prices
+            const opening = parseFloat(data.opening_price);
+            const closing = parseFloat(data.closing_price);
+            const high = parseFloat(data.high_price);
+            const low = parseFloat(data.low_price);
+
+            if (high < Math.max(opening, closing) || low > Math.min(opening, closing)) {
+                alert('High price must be >= max(opening, closing) and Low price must be <= min(opening, closing)');
+                return;
+            }
+
+            if (isEditMode) {
+                const id = document.getElementById('price_id').value;
+                db.update(id, data);
+                alert('Price entry updated successfully!');
+            } else {
+                db.add(data);
+                alert('Price entry added successfully!');
+            }
+
+            closeModal('priceHistoryModal');
+            loadPriceHistory();
+            clearSelections();
+        }
+
+        function handleDelete() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select at least one price entry to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${selected.length} price entry(s)?`)) {
+                return;
+            }
+
+            const deleted = db.deleteMultiple(selected);
+            alert(`${deleted} price entry(s) deleted successfully!`);
+            loadPriceHistory();
+            clearSelections();
+        }
+
+        // Utility functions
+        function toggleRowSelection(id, checkbox) {
+            if (checkbox.checked) {
+                selectedRows.add(id);
+            } else {
+                selectedRows.delete(id);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+            selectedRows.clear();
+
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    const id = parseInt(cb.getAttribute('data-id'));
+                    selectedRows.add(id);
+                }
+            });
+        }
+
+        function clearSelections() {
+            selectedRows.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+    </script>
+</body>
+
+</html>

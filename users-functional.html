@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users - ASA Data Server</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <style>
+        .role-admin {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .role-manager {
+            background: #3498db;
+            color: white;
+        }
+
+        .role-analyst {
+            background: #f39c12;
+            color: white;
+        }
+
+        .role-auditor {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .role-investor {
+            background: #27ae60;
+            color: white;
+        }
+
+        .role-viewer {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .last-login {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .user-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .action-buttons-inline {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-logs {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">User Management</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="users-functional.html" class="active">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>👥 User Management</h1>
+            <p>Manage system users, roles, and access permissions</p>
+        </div>
+
+        <div class="user-stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalUsers">0</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeUsers">0</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="adminUsers">0</div>
+                <div class="stat-label">Administrators</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="onlineUsers">0</div>
+                <div class="stat-label">Online Now</div>
+            </div>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search users..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add User</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>User ID</th>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Last Login</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="10" style="text-align: center; padding: 40px;">Loading users...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add User</h2>
+                <span class="close" onclick="closeModal('userModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="user_id">
+
+                    <div class="form-group">
+                        <label for="username">Username *</label>
+                        <input type="text" id="username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="full_name">Full Name *</label>
+                        <input type="text" id="full_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Role *</label>
+                        <select id="role" required>
+                            <option value="">Select Role</option>
+                            <option value="Admin">Administrator</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Investor">Investor</option>
+                            <option value="Analyst">Analyst</option>
+                            <option value="Auditor">Auditor</option>
+                            <option value="Viewer">Viewer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="department">Department</label>
+                        <select id="department">
+                            <option value="">Select Department</option>
+                            <option value="IT">Information Technology</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Compliance">Compliance</option>
+                            <option value="Risk Management">Risk Management</option>
+                            <option value="Operations">Operations</option>
+                            <option value="Audit">Audit</option>
+                            <option value="Management">Management</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password *</label>
+                        <input type="password" id="password" required>
+                        <small style="color: #666;">Minimum 8 characters</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal('userModal')">Cancel</button>
+                <button type="button" class="btn-save" onclick="handleSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/local-database.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
+        const db = new LocalDatabase('users');
+        let selectedRows = new Set();
+        let isEditMode = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDefaultUsers();
+            loadUsers();
+            updateStats();
+        });
+
+        function initializeDefaultUsers() {
+            if (db.getAll().length === 0) {
+                // Add default admin user
+                db.add({
+                    username: 'admin',
+                    email: 'admin@asadata.com',
+                    full_name: 'System Administrator',
+                    role: 'Admin',
+                    department: 'IT',
+                    password: 'admin123', // In real system, this would be hashed
+                    status: 'Active',
+                    last_login: new Date().toISOString()
+                });
+
+                // Add sample users
+                const sampleUsers = [
+                    {
+                        username: 'investor',
+                        email: 'investor@asadata.com',
+                        full_name: 'Demo Investor',
+                        role: 'Investor',
+                        department: 'Investment',
+                        password: 'investor123',
+                        status: 'Active',
+                        last_login: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString() // 1 hour ago
+                    },
+                    {
+                        username: 'jsmith',
+                        email: 'john.smith@asadata.com',
+                        full_name: 'John Smith',
+                        role: 'Manager',
+                        department: 'Finance',
+                        password: 'password123',
+                        status: 'Active',
+                        last_login: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+                    },
+                    {
+                        username: 'mjohnson',
+                        email: 'mary.johnson@asadata.com',
+                        full_name: 'Mary Johnson',
+                        role: 'Analyst',
+                        department: 'Risk Management',
+                        password: 'password123',
+                        status: 'Active',
+                        last_login: new Date(Date.now() - 30 * 60 * 1000).toISOString() // 30 minutes ago
+                    },
+                    {
+                        username: 'rbrown',
+                        email: 'robert.brown@asadata.com',
+                        full_name: 'Robert Brown',
+                        role: 'Auditor',
+                        department: 'Audit',
+                        password: 'password123',
+                        status: 'Active',
+                        last_login: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 1 day ago
+                    },
+                    {
+                        username: 'sdavis',
+                        email: 'sarah.davis@asadata.com',
+                        full_name: 'Sarah Davis',
+                        role: 'Viewer',
+                        department: 'Compliance',
+                        password: 'password123',
+                        status: 'Inactive',
+                        last_login: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 1 week ago
+                    }
+                ];
+
+                sampleUsers.forEach(user => db.add(user));
+            }
+        }
+
+        function loadUsers() {
+            const users = db.getAll();
+            renderTable(users);
+            updateStats();
+        }
+
+        function renderTable(users) {
+            const tbody = document.getElementById('tableBody');
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">No users found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => {
+                const lastLogin = user.last_login ? new Date(user.last_login) : null;
+                const lastLoginText = lastLogin ?
+                    `${lastLogin.toLocaleDateString()} ${lastLogin.toLocaleTimeString()}` : 'Never';
+
+                // Determine if user is "online" (logged in within last hour)
+                const isOnline = lastLogin && (Date.now() - lastLogin.getTime()) < 60 * 60 * 1000;
+
+                return `
+                <tr>
+                    <td><input type="checkbox" data-id="${user.id}" onchange="toggleRowSelection(${user.id}, this)"></td>
+                    <td>U-${user.id}</td>
+                    <td>
+                        <strong>${user.username}</strong>
+                        ${isOnline ? '<span style="color: #27ae60; font-size: 12px;">● Online</span>' : ''}
+                    </td>
+                    <td>${user.full_name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="role-badge role-${user.role.toLowerCase()}">${user.role}</span></td>
+                    <td>${user.department || '-'}</td>
+                    <td class="last-login">${lastLoginText}</td>
+                    <td><span class="badge badge-${user.status.toLowerCase()}">${user.status}</span></td>
+                    <td>
+                        <div class="action-buttons-inline">
+                            <button class="btn-small btn-edit" onclick="editSingleUser(${user.id})" title="Edit">✏️</button>
+                            <button class="btn-small btn-delete" onclick="deleteSingleUser(${user.id})" title="Delete">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const users = db.getAll();
+            const now = Date.now();
+
+            const totalUsers = users.length;
+            const activeUsers = users.filter(u => u.status === 'Active').length;
+            const adminUsers = users.filter(u => u.role === 'Admin').length;
+            const onlineUsers = users.filter(u => {
+                const lastLogin = u.last_login ? new Date(u.last_login).getTime() : 0;
+                return (now - lastLogin) < 60 * 60 * 1000; // Within last hour
+            }).length;
+
+            document.getElementById('totalUsers').textContent = totalUsers;
+            document.getElementById('activeUsers').textContent = activeUsers;
+            document.getElementById('adminUsers').textContent = adminUsers;
+            document.getElementById('onlineUsers').textContent = onlineUsers;
+        }
+
+        function viewUserLogs(userId) {
+            // In a real system, this would show user activity logs
+            alert(`Viewing logs for User ID: ${userId}\n\nThis would show:\n- Login/logout times\n- Actions performed\n- System access history\n- Data modifications`);
+        }
+
+        function resetPassword(userId) {
+            const user = db.getById(userId);
+            if (user && confirm(`Reset password for ${user.full_name}?`)) {
+                const newPassword = 'temp' + Math.floor(Math.random() * 10000);
+                user.password = newPassword;
+                db.update(userId, user);
+                alert(`Password reset successfully!\n\nNew temporary password: ${newPassword}\n\nUser should change this on next login.`);
+            }
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim() === '') {
+                loadUsers();
+            } else {
+                const results = db.search(query);
+                renderTable(results);
+            }
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Add User';
+            document.getElementById('userForm').reset();
+            document.getElementById('user_id').value = '';
+            document.getElementById('status').value = 'Active';
+            document.getElementById('password').required = true;
+            openModal('userModal');
+        }
+
+        function openEditModal() {
+            if (selectedRows.size !== 1) {
+                alert('Please select exactly one user to edit');
+                return;
+            }
+
+            const id = Array.from(selectedRows)[0];
+            const user = db.getById(id);
+
+            if (user) {
+                isEditMode = true;
+                document.getElementById('modalTitle').textContent = 'Edit User';
+                document.getElementById('user_id').value = user.id;
+                document.getElementById('username').value = user.username;
+                document.getElementById('email').value = user.email;
+                document.getElementById('full_name').value = user.full_name;
+                document.getElementById('role').value = user.role;
+                document.getElementById('department').value = user.department || '';
+                document.getElementById('password').value = '';
+                document.getElementById('password').required = false;
+                document.getElementById('status').value = user.status;
+                openModal('userModal');
+            }
+        }
+
+        function handleSave() {
+            const data = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                full_name: document.getElementById('full_name').value,
+                role: document.getElementById('role').value,
+                department: document.getElementById('department').value,
+                status: document.getElementById('status').value
+            };
+
+            const password = document.getElementById('password').value;
+            if (password) {
+                data.password = password; // In real system, this would be hashed
+            }
+
+            if (isEditMode) {
+                const id = document.getElementById('user_id').value;
+                const existingUser = db.getById(id);
+                // Preserve existing password if not changed
+                if (!password) {
+                    data.password = existingUser.password;
+                }
+                data.last_login = existingUser.last_login;
+                db.update(id, data);
+                alert('User updated successfully!');
+            } else {
+                if (!password) {
+                    alert('Password is required for new users');
+                    return;
+                }
+                data.last_login = null;
+                db.add(data);
+                alert('User added successfully!');
+            }
+
+            closeModal('userModal');
+            loadUsers();
+            clearSelections();
+        }
+
+        function handleDelete() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select at least one user to delete');
+                return;
+            }
+
+            // Check if trying to delete admin users
+            const users = selected.map(id => db.getById(id));
+            const adminUsers = users.filter(u => u.role === 'Admin');
+
+            if (adminUsers.length > 0) {
+                alert('Cannot delete administrator users for security reasons');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${selected.length} user(s)?`)) {
+                return;
+            }
+
+            const deleted = db.deleteMultiple(selected);
+            alert(`${deleted} user(s) deleted successfully!`);
+            loadUsers();
+            clearSelections();
+        }
+
+        // Utility functions
+        function toggleRowSelection(id, checkbox) {
+            if (checkbox.checked) {
+                selectedRows.add(id);
+            } else {
+                selectedRows.delete(id);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+            selectedRows.clear();
+
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    const id = parseInt(cb.getAttribute('data-id'));
+                    selectedRows.add(id);
+                }
+            });
+        }
+
+        function clearSelections() {
+            selectedRows.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+        // Individual row actions
+        function editSingleUser(id) {
+            const user = db.getById(id);
+            if (user) {
+                isEditMode = true;
+                document.getElementById('modalTitle').textContent = 'Edit User';
+                document.getElementById('user_id').value = user.id;
+                document.getElementById('username').value = user.username;
+                document.getElementById('email').value = user.email;
+                document.getElementById('full_name').value = user.full_name;
+                document.getElementById('role').value = user.role;
+                document.getElementById('department').value = user.department || '';
+                document.getElementById('password').value = '';
+                document.getElementById('password').required = false;
+                document.getElementById('status').value = user.status;
+                openModal('userModal');
+            }
+        }
+
+        function deleteSingleUser(id) {
+            const user = db.getById(id);
+            if (user) {
+                // Check if trying to delete admin user
+                if (user.role === 'Admin') {
+                    alert('Cannot delete administrator users for security reasons');
+                    return;
+                }
+
+                if (confirm(`Are you sure you want to delete user "${user.full_name}"?`)) {
+                    db.delete(id);
+                    alert('User deleted successfully!');
+                    loadUsers();
+                    clearSelections();
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investor Dashboard - ASA Data Server</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/table.css">
+  <style>
+    .request-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .request-card h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .request-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .btn-submit {
+      grid-column: span 2;
+      padding: 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-submit:hover {
+      background: #5a6fd8;
+    }
+
+    .portfolio-section {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .stock-info-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 4px solid #667eea;
+    }
+
+    .stock-info-card h4 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .stock-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      font-size: 14px;
+    }
+
+    .stock-detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stock-detail-label {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .stock-detail-value {
+      font-weight: 600;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>👤 Investor Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="investorName">Welcome, Investor</p>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="dashboard-investor.html" class="active">📊 Dashboard</a></li>
+      <li><a href="investor-portfolio.html">💼 My Portfolio</a></li>
+      <li><a href="investor-transactions.html">💰 My Transactions</a></li>
+      <li><a href="investor-stocks.html">📈 Browse Stocks</a></li>
+      <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1>👤 Investor Dashboard</h1>
+      <p>Manage your investments and track your portfolio performance</p>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom: 30px;">
+      <div class="stat-card">
+        <div class="stat-icon blue">💼</div>
+        <div class="stat-info">
+          <h3>Portfolio Value</h3>
+          <p class="stat-number" id="portfolioValue">$0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📈</div>
+        <div class="stat-info">
+          <h3>Total Gain/Loss</h3>
+          <p class="stat-number" id="totalGainLoss">$0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">📊</div>
+        <div class="stat-info">
+          <h3>Active Holdings</h3>
+          <p class="stat-number" id="activeHoldings">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">💰</div>
+        <div class="stat-info">
+          <h3>Pending Requests</h3>
+          <p class="stat-number" id="pendingRequests">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buy/Sell Request Form -->
+    <div class="request-card">
+      <h3>📝 Submit Buy/Sell Request</h3>
+      <p style="color: #666; font-size: 14px;">Send a request to the Manager for stock transactions</p>
+
+      <form class="request-form" id="tradeRequestForm" onsubmit="submitTradeRequest(event)">
+        <div class="form-group">
+          <label for="requestType">Request Type *</label>
+          <select id="requestType" required>
+            <option value="">Select Type</option>
+            <option value="Buy">Buy</option>
+            <option value="Sell">Sell</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="stockSelect">Stock *</label>
+          <select id="stockSelect" required>
+            <option value="">Select Stock</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="quantity">Quantity *</label>
+          <input type="number" id="quantity" min="1" required placeholder="Number of shares">
+        </div>
+
+        <div class="form-group">
+          <label for="priceLimit">Price Limit (Optional)</label>
+          <input type="number" id="priceLimit" step="0.01" min="0" placeholder="Maximum/Minimum price">
+        </div>
+
+        <button type="submit" class="btn-submit">Submit Request to Manager</button>
+      </form>
+    </div>
+
+    <!-- Stock Information Request -->
+    <div class="request-card">
+      <h3>📊 Request Stock Information</h3>
+      <p style="color: #666; font-size: 14px;">Get detailed information from Stock Management Team</p>
+
+      <form class="request-form" id="stockInfoForm" onsubmit="requestStockInfo(event)">
+        <div class="form-group">
+          <label for="infoStockSelect">Select Stock *</label>
+          <select id="infoStockSelect" required>
+            <option value="">Select Stock</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="infoType">Information Type *</label>
+          <select id="infoType" required>
+            <option value="">Select Type</option>
+            <option value="Price History">Price History</option>
+            <option value="Company Details">Company Details</option>
+            <option value="Market Analysis">Market Analysis</option>
+            <option value="Predictions">AI Predictions</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-submit">Request Information</button>
+      </form>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="portfolio-section">
+      <h3>📋 Recent Activity</h3>
+      <div id="recentActivity">
+        <p style="text-align: center; color: #666; padding: 20px;">No recent activity</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script src="js/logout.js"></script>
+  <script>
+    // Check if user is logged in and has Investor role
+    window.addEventListener('DOMContentLoaded', () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userRole = localStorage.getItem('userRole');
+      const userFullName = localStorage.getItem('userFullName');
+
+      if (!isLoggedIn || userRole !== 'Investor') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Display investor name
+      document.getElementById('investorName').textContent = `Welcome, ${userFullName}`;
+
+      // Load data
+      loadStockOptions();
+      loadDashboardStats();
+      loadRecentActivity();
+    });
+
+    function loadStockOptions() {
+      const stocksDb = new LocalDatabase('stocks');
+      const stocks = stocksDb.getAll();
+
+      const stockSelect = document.getElementById('stockSelect');
+      const infoStockSelect = document.getElementById('infoStockSelect');
+
+      stocks.forEach(stock => {
+        const option1 = document.createElement('option');
+        option1.value = stock.id;
+        option1.textContent = `${stock.symbol} - $${parseFloat(stock.current_price || 0).toFixed(2)}`;
+        stockSelect.appendChild(option1);
+
+        const option2 = document.createElement('option');
+        option2.value = stock.id;
+        option2.textContent = `${stock.symbol} - ${stock.stock_name}`;
+        infoStockSelect.appendChild(option2);
+      });
+    }
+
+    function loadDashboardStats() {
+      const userId = localStorage.getItem('userId');
+      const transactionsDb = new LocalDatabase('stock_transactions');
+      const transactions = transactionsDb.getAll().filter(tx => tx.investor_id == userId);
+
+      // Calculate portfolio value (simplified)
+      const portfolioValue = transactions.reduce((sum, tx) => {
+        return tx.transaction_type === 'Buy' ? sum + parseFloat(tx.total_amount || 0) : sum;
+      }, 0);
+
+      document.getElementById('portfolioValue').textContent = '$' + portfolioValue.toLocaleString();
+      document.getElementById('totalGainLoss').textContent = '$' + (portfolioValue * 0.15).toFixed(2); // Sample calculation
+      document.getElementById('activeHoldings').textContent = transactions.length;
+      document.getElementById('pendingRequests').textContent = '0';
+    }
+
+    function submitTradeRequest(event) {
+      event.preventDefault();
+
+      const userId = localStorage.getItem('userId');
+      const requestType = document.getElementById('requestType').value;
+      const stockId = document.getElementById('stockSelect').value;
+      const quantity = document.getElementById('quantity').value;
+      const priceLimit = document.getElementById('priceLimit').value;
+
+      const stocksDb = new LocalDatabase('stocks');
+      const stock = stocksDb.getById(stockId);
+
+      const transactionsDb = new LocalDatabase('stock_transactions');
+      const totalAmount = parseFloat(stock.current_price) * parseInt(quantity);
+
+      transactionsDb.add({
+        investor_id: userId,
+        company_id: stock.company_id,
+        stock_id: stockId,
+        transaction_type: requestType,
+        quantity: quantity,
+        price_per_share: stock.current_price,
+        total_amount: totalAmount.toFixed(2),
+        transaction_date: new Date().toISOString().split('T')[0],
+        status: 'Pending',
+        price_limit: priceLimit || null
+      });
+
+      alert(`${requestType} request submitted successfully!\n\nStock: ${stock.symbol}\nQuantity: ${quantity}\nEstimated Amount: $${totalAmount.toFixed(2)}\n\nYour request has been sent to the Manager for approval.`);
+
+      document.getElementById('tradeRequestForm').reset();
+      loadDashboardStats();
+      loadRecentActivity();
+    }
+
+    function requestStockInfo(event) {
+      event.preventDefault();
+
+      const stockId = document.getElementById('infoStockSelect').value;
+      const infoType = document.getElementById('infoType').value;
+
+      const stocksDb = new LocalDatabase('stocks');
+      const stock = stocksDb.getById(stockId);
+
+      alert(`Stock Information Request Submitted!\n\nStock: ${stock.symbol}\nInformation Type: ${infoType}\n\nThe Stock Management Team will provide the requested information shortly.`);
+
+      document.getElementById('stockInfoForm').reset();
+    }
+
+    function loadRecentActivity() {
+      const userId = localStorage.getItem('userId');
+      const transactionsDb = new LocalDatabase('stock_transactions');
+      const transactions = transactionsDb.getAll()
+        .filter(tx => tx.investor_id == userId)
+        .sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date))
+        .slice(0, 5);
+
+      const activityDiv = document.getElementById('recentActivity');
+
+      if (transactions.length === 0) {
+        activityDiv.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No recent activity</p>';
+        return;
+      }
+
+      const stocksDb = new LocalDatabase('stocks');
+
+      activityDiv.innerHTML = transactions.map(tx => {
+        const stock = stocksDb.getById(tx.stock_id);
+        const stockSymbol = stock ? stock.symbol : 'Unknown';
+
+        return `
+                    <div class="stock-info-card">
+                        <h4>${tx.transaction_type} - ${stockSymbol}</h4>
+                        <div class="stock-details">
+                            <div class="stock-detail-item">
+                                <span class="stock-detail-label">Quantity</span>
+                                <span class="stock-detail-value">${tx.quantity} shares</span>
+                            </div>
+                            <div class="stock-detail-item">
+                                <span class="stock-detail-label">Price/Share</span>
+                                <span class="stock-detail-value">$${parseFloat(tx.price_per_share).toFixed(2)}</span>
+                            </div>
+                            <div class="stock-detail-item">
+                                <span class="stock-detail-label">Total Amount</span>
+                                <span class="stock-detail-value">$${parseFloat(tx.total_amount).toLocaleString()}</span>
+                            </div>
+                            <div class="stock-detail-item">
+                                <span class="stock-detail-label">Date</span>
+                                <span class="stock-detail-value">${new Date(tx.transaction_date).toLocaleDateString()}</span>
+                            </div>
+                            <div class="stock-detail-item">
+                                <span class="stock-detail-label">Status</span>
+                                <span class="stock-detail-value">${tx.status}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+      }).join('');
+    }
+  </script>
+</body>
+
+</html>

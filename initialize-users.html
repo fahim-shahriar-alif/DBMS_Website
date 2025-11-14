@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Initialize Users - ASA Data Server</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      max-width: 500px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 15px 30px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s;
+    }
+
+    .btn:hover {
+      background: #5a6fd8;
+      transform: translateY(-2px);
+    }
+
+    .success {
+      background: #27ae60;
+      padding: 15px;
+      border-radius: 6px;
+      color: white;
+      margin: 20px 0;
+      display: none;
+    }
+
+    .user-list {
+      text-align: left;
+      margin: 20px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .user-item {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .user-item:last-child {
+      border-bottom: none;
+    }
+
+    .credentials {
+      font-family: monospace;
+      background: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🔧 Initialize Users Database</h1>
+    <p>Click the button below to create default users including the Investor account.</p>
+
+    <button class="btn" onclick="initializeUsers()">Initialize Users</button>
+
+    <div class="success" id="successMessage">
+      ✅ Users initialized successfully!
+    </div>
+
+    <div class="user-list" id="userList" style="display: none;">
+      <h3>Created Users:</h3>
+      <div id="userListContent"></div>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <a href="login.html" style="color: #667eea; text-decoration: none; font-weight: 600;">
+        → Go to Login Page
+      </a>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script>
+    function initializeUsers() {
+      const db = new LocalDatabase('users');
+
+      // Clear existing users
+      db.clear();
+
+      // Add default users
+      const users = [
+        {
+          username: 'admin',
+          email: 'admin@asadata.com',
+          full_name: 'System Administrator',
+          role: 'Admin',
+          department: 'IT',
+          password: 'admin123',
+          status: 'Active',
+          last_login: new Date().toISOString()
+        },
+        {
+          username: 'investor',
+          email: 'investor@asadata.com',
+          full_name: 'Demo Investor',
+          role: 'Investor',
+          department: 'Investment',
+          password: 'investor123',
+          status: 'Active',
+          last_login: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          username: 'jsmith',
+          email: 'john.smith@asadata.com',
+          full_name: 'John Smith',
+          role: 'Manager',
+          department: 'Finance',
+          password: 'password123',
+          status: 'Active',
+          last_login: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          username: 'mjohnson',
+          email: 'mary.johnson@asadata.com',
+          full_name: 'Mary Johnson',
+          role: 'Analyst',
+          department: 'Risk Management',
+          password: 'password123',
+          status: 'Active',
+          last_login: new Date(Date.now() - 30 * 60 * 1000).toISOString()
+        },
+        {
+          username: 'rbrown',
+          email: 'robert.brown@asadata.com',
+          full_name: 'Robert Brown',
+          role: 'Auditor',
+          department: 'Audit',
+          password: 'password123',
+          status: 'Active',
+          last_login: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          username: 'sdavis',
+          email: 'sarah.davis@asadata.com',
+          full_name: 'Sarah Davis',
+          role: 'Viewer',
+          department: 'Compliance',
+          password: 'password123',
+          status: 'Inactive',
+          last_login: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+
+      // Add all users
+      users.forEach(user => db.add(user));
+
+      // Show success message
+      document.getElementById('successMessage').style.display = 'block';
+
+      // Display user list
+      const userListContent = document.getElementById('userListContent');
+      userListContent.innerHTML = users.map(user => `
+                <div class="user-item">
+                    <strong>${user.full_name}</strong> (${user.role})<br>
+                    <div class="credentials">
+                        Username: <strong>${user.username}</strong><br>
+                        Password: <strong>${user.password}</strong>
+                    </div>
+                </div>
+            `).join('');
+
+      document.getElementById('userList').style.display = 'block';
+    }
+
+    // Check if users already exist
+    window.addEventListener('DOMContentLoaded', () => {
+      const db = new LocalDatabase('users');
+      const users = db.getAll();
+
+      if (users.length > 0) {
+        const userListContent = document.getElementById('userListContent');
+        userListContent.innerHTML = users.map(user => `
+                    <div class="user-item">
+                        <strong>${user.full_name}</strong> (${user.role})<br>
+                        <div class="credentials">
+                            Username: <strong>${user.username}</strong><br>
+                            Password: <strong>${user.password}</strong>
+                        </div>
+                    </div>
+                `).join('');
+
+        document.getElementById('userList').style.display = 'block';
+        document.getElementById('successMessage').textContent = '✅ Users already initialized!';
+        document.getElementById('successMessage').style.display = 'block';
+      }
+    });
+  </script>
+</body>
+
+</html>

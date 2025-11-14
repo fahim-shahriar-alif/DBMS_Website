@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Management - ASA Data Server</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">American Stock Association</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html" class="active">🔄 Trades</a></li>
+            <li><a href="users-functional.html">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>🔄 Trade Management</h1>
+            <p>Manage trade execution, order matching, and settlement processing</p>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom: 30px;">
+            <div class="stat-card">
+                <div class="stat-icon blue">🔄</div>
+                <div class="stat-info">
+                    <h3>Total Trades</h3>
+                    <p class="stat-number" id="totalTrades">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✅</div>
+                <div class="stat-info">
+                    <h3>Completed</h3>
+                    <p class="stat-number" id="completedTrades">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">⏳</div>
+                <div class="stat-info">
+                    <h3>Pending</h3>
+                    <p class="stat-number" id="pendingTrades">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">💵</div>
+                <div class="stat-info">
+                    <h3>Trade Volume</h3>
+                    <p class="stat-number" id="tradeVolume">$0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search trades..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add Trade</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>Trade ID</th>
+                        <th>Buyer</th>
+                        <th>Seller</th>
+                        <th>Stock Symbol</th>
+                        <th>Shares</th>
+                        <th>Trade Price</th>
+                        <th>Trade Amount</th>
+                        <th>Trade Date</th>
+                        <th>Settlement Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="11" style="text-align: center; padding: 40px;">No trades found. Click "+ Add" to
+                            create your first trade.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Trade</h2>
+                <span class="close" onclick="closeModal('tradeModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="tradeForm">
+                    <input type="hidden" id="trade_id">
+
+                    <div class="form-group">
+                        <label for="buyer_name">Buyer Name *</label>
+                        <input type="text" id="buyer_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="seller_name">Seller Name *</label>
+                        <input type="text" id="seller_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stock_symbol">Stock Symbol *</label>
+                        <input type="text" id="stock_symbol" required placeholder="e.g., AAPL">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="shares">Number of Shares *</label>
+                        <input type="number" id="shares" required min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="trade_price">Trade Price ($) *</label>
+                        <input type="number" id="trade_price" required step="0.01" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="trade_amount">Trade Amount ($)</label>
+                        <input type="number" id="trade_amount" step="0.01" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="trade_date">Trade Date</label>
+                        <input type="date" id="trade_date">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settlement_date">Settlement Date</label>
+                        <input type="date" id="settlement_date">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="Pending">Pending</option>
+                            <option value="Executed">Executed</option>
+                            <option value="Settled">Settled</option>
+                            <option value="Failed">Failed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('tradeModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="handleSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/local-database.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
+        const db = new LocalDatabase('trades');
+        let selectedRows = new Set();
+        let isEditMode = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadTrades();
+
+            // Auto-calculate trade amount
+            document.getElementById('shares').addEventListener('input', calculateAmount);
+            document.getElementById('trade_price').addEventListener('input', calculateAmount);
+        });
+
+        function calculateAmount() {
+            const shares = parseFloat(document.getElementById('shares').value) || 0;
+            const price = parseFloat(document.getElementById('trade_price').value) || 0;
+            document.getElementById('trade_amount').value = (shares * price).toFixed(2);
+        }
+
+        function loadTrades() {
+            const trades = db.getAll();
+            renderTable(trades);
+        }
+
+        function renderTable(trades) {
+            const tbody = document.getElementById('tableBody');
+
+            if (trades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 40px;">No trades found. Click "+ Add" to create your first trade.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = trades.map(trade => `
+                <tr>
+                    <td><input type="checkbox" data-id="${trade.id}" onchange="toggleRowSelection(${trade.id}, this)"></td>
+                    <td>${trade.id}</td>
+                    <td>${trade.buyer_name}</td>
+                    <td>${trade.seller_name}</td>
+                    <td><strong>${trade.stock_symbol}</strong></td>
+                    <td>${parseInt(trade.shares).toLocaleString()}</td>
+                    <td>$${parseFloat(trade.trade_price).toFixed(2)}</td>
+                    <td><strong>$${parseFloat(trade.trade_amount).toFixed(2)}</strong></td>
+                    <td>${trade.trade_date || '-'}</td>
+                    <td>${trade.settlement_date || '-'}</td>
+                    <td><span class="badge badge-${trade.status.toLowerCase()}">${trade.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim() === '') {
+                loadTrades();
+            } else {
+                const results = db.search(query);
+                renderTable(results);
+            }
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Add Trade';
+            document.getElementById('tradeForm').reset();
+            document.getElementById('trade_id').value = '';
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('trade_date').value = today;
+            // Settlement date is typically T+2
+            const settlement = new Date();
+            settlement.setDate(settlement.getDate() + 2);
+            document.getElementById('settlement_date').value = settlement.toISOString().split('T')[0];
+            openModal('tradeModal');
+        }
+
+        function openEditModal() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select a trade to edit');
+                return;
+            }
+            if (selected.length > 1) {
+                alert('Please select only one trade to edit');
+                return;
+            }
+
+            isEditMode = true;
+            document.getElementById('modalTitle').textContent = 'Edit Trade';
+
+            const trade = db.getById(selected[0]);
+            if (trade) {
+                document.getElementById('trade_id').value = trade.id;
+                document.getElementById('buyer_name').value = trade.buyer_name;
+                document.getElementById('seller_name').value = trade.seller_name;
+                document.getElementById('stock_symbol').value = trade.stock_symbol;
+                document.getElementById('shares').value = trade.shares;
+                document.getElementById('trade_price').value = trade.trade_price;
+                document.getElementById('trade_amount').value = trade.trade_amount;
+                document.getElementById('trade_date').value = trade.trade_date || '';
+                document.getElementById('settlement_date').value = trade.settlement_date || '';
+                document.getElementById('status').value = trade.status;
+                openModal('tradeModal');
+            }
+        }
+
+        function handleSave() {
+            const data = {
+                buyer_name: document.getElementById('buyer_name').value,
+                seller_name: document.getElementById('seller_name').value,
+                stock_symbol: document.getElementById('stock_symbol').value.toUpperCase(),
+                shares: document.getElementById('shares').value,
+                trade_price: document.getElementById('trade_price').value,
+                trade_amount: document.getElementById('trade_amount').value,
+                trade_date: document.getElementById('trade_date').value,
+                settlement_date: document.getElementById('settlement_date').value,
+                status: document.getElementById('status').value
+            };
+
+            if (isEditMode) {
+                const id = document.getElementById('trade_id').value;
+                db.update(id, data);
+                alert('Trade updated successfully!');
+            } else {
+                db.add(data);
+                alert('Trade added successfully!');
+            }
+
+            closeModal('tradeModal');
+            loadTrades();
+            clearSelections();
+        }
+
+        function handleDelete() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select at least one trade to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${selected.length} trade(s)?`)) {
+                return;
+            }
+
+            const deleted = db.deleteMultiple(selected);
+            alert(`${deleted} trade(s) deleted successfully!`);
+            loadTrades();
+            clearSelections();
+        }
+
+        function toggleRowSelection(id, checkbox) {
+            if (checkbox.checked) {
+                selectedRows.add(id);
+            } else {
+                selectedRows.delete(id);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+            selectedRows.clear();
+
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    const id = parseInt(cb.getAttribute('data-id'));
+                    selectedRows.add(id);
+                }
+            });
+        }
+
+        function clearSelections() {
+            selectedRows.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+    </script>
+</body>
+
+</html>

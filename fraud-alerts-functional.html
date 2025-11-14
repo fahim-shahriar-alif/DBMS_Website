@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Alerts - ASA Data Server</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <style>
+        .severity-high {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .severity-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .severity-low {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .alert-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .alert-suspicious {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .alert-unusual {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .alert-pattern {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .action-buttons-inline {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-resolve {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-investigate {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-view {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">AI-Based Fraud Detection</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="users-functional.html">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html" class="active">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>⚠️ AI-Based Fraud Detection</h1>
+            <p>Monitor and investigate suspicious transactions and trading patterns</p>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom: 30px;">
+            <div class="stat-card">
+                <div class="stat-icon red">⚠️</div>
+                <div class="stat-info">
+                    <h3>Active Alerts</h3>
+                    <p class="stat-number" id="activeAlerts">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">🔍</div>
+                <div class="stat-info">
+                    <h3>Under Investigation</h3>
+                    <p class="stat-number" id="investigating">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✅</div>
+                <div class="stat-info">
+                    <h3>Resolved Today</h3>
+                    <p class="stat-number" id="resolvedToday">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon blue">📊</div>
+                <div class="stat-info">
+                    <h3>Detection Rate</h3>
+                    <p class="stat-number" id="detectionRate">98.5%</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search fraud alerts..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add Alert</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>Alert ID</th>
+                        <th>Transaction ID</th>
+                        <th>Alert Type</th>
+                        <th>Severity</th>
+                        <th>Description</th>
+                        <th>Detected Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">No fraud alerts found.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="fraudAlertModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Fraud Alert</h2>
+                <span class="close" onclick="closeModal('fraudAlertModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="fraudAlertForm">
+                    <input type="hidden" id="alert_id">
+
+                    <div class="form-group">
+                        <label for="transaction_id">Transaction ID *</label>
+                        <select id="transaction_id" required>
+                            <option value="">Select Transaction</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alert_type">Alert Type *</label>
+                        <select id="alert_type" required>
+                            <option value="">Select Type</option>
+                            <option value="Suspicious Volume">Suspicious Volume</option>
+                            <option value="Unusual Pattern">Unusual Pattern</option>
+                            <option value="Price Manipulation">Price Manipulation</option>
+                            <option value="Insider Trading">Insider Trading</option>
+                            <option value="Money Laundering">Money Laundering</option>
+                            <option value="Market Abuse">Market Abuse</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="severity">Severity *</label>
+                        <select id="severity" required>
+                            <option value="">Select Severity</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description *</label>
+                        <textarea id="description" rows="4" required
+                            placeholder="Describe the suspicious activity..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="detected_date">Detected Date *</label>
+                        <input type="datetime-local" id="detected_date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="Active">Active</option>
+                            <option value="Investigating">Investigating</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="False Positive">False Positive</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resolved_date">Resolved Date</label>
+                        <input type="datetime-local" id="resolved_date">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal('fraudAlertModal')">Cancel</button>
+                <button type="button" class="btn-save" onclick="handleSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/local-database.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
+        const db = new LocalDatabase('fraud_alerts');
+        const transactionsDb = new LocalDatabase('stock_transactions');
+        let selectedRows = new Set();
+        let isEditMode = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTransactionOptions();
+            loadFraudAlerts();
+            updateStats();
+
+            // Set default detected date to now
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('detected_date').value = now.toISOString().slice(0, 16);
+        });
+
+        function loadTransactionOptions() {
+            const transactions = transactionsDb.getAll();
+            const select = document.getElementById('transaction_id');
+            select.innerHTML = '<option value="">Select Transaction</option>';
+
+            transactions.forEach(tx => {
+                const option = document.createElement('option');
+                option.value = tx.id;
+                option.textContent = `TX-${tx.id} - $${parseFloat(tx.total_amount || 0).toLocaleString()}`;
+                select.appendChild(option);
+            });
+        }
+
+        function loadFraudAlerts() {
+            const alerts = db.getAll();
+            renderTable(alerts);
+            updateStats();
+        }
+
+        function renderTable(alerts) {
+            const tbody = document.getElementById('tableBody');
+            const transactions = transactionsDb.getAll();
+
+            if (alerts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No fraud alerts found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = alerts.map(alert => {
+                const transaction = transactions.find(tx => tx.id == alert.transaction_id);
+                const txDisplay = transaction ? `TX-${transaction.id}` : 'Unknown';
+
+                return `
+                <tr>
+                    <td><input type="checkbox" data-id="${alert.id}" onchange="toggleRowSelection(${alert.id}, this)"></td>
+                    <td>FA-${alert.id}</td>
+                    <td>${txDisplay}</td>
+                    <td><span class="alert-type alert-${alert.alert_type.toLowerCase().replace(/\s+/g, '-')}">${alert.alert_type}</span></td>
+                    <td><span class="severity-${alert.severity.toLowerCase()}">${alert.severity}</span></td>
+                    <td>${alert.description.substring(0, 50)}${alert.description.length > 50 ? '...' : ''}</td>
+                    <td>${new Date(alert.detected_date).toLocaleDateString()}</td>
+                    <td><span class="badge badge-${alert.status.toLowerCase().replace(/\s+/g, '-')}">${alert.status}</span></td>
+                    <td>
+                        <div class="action-buttons-inline">
+                            ${alert.status === 'Active' ?
+                        `<button class="btn-small btn-investigate" onclick="investigate(${alert.id})" title="Investigate">🔍</button>` : ''}
+                            ${alert.status === 'Investigating' ?
+                        `<button class="btn-small btn-resolve" onclick="resolve(${alert.id})" title="Resolve">✅</button>` : ''}
+                            <button class="btn-small btn-view" onclick="viewTransaction(${alert.transaction_id})" title="View Transaction">💰</button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const alerts = db.getAll();
+            const today = new Date().toDateString();
+
+            const activeAlerts = alerts.filter(a => a.status === 'Active').length;
+            const investigating = alerts.filter(a => a.status === 'Investigating').length;
+            const resolvedToday = alerts.filter(a =>
+                a.status === 'Resolved' &&
+                a.resolved_date &&
+                new Date(a.resolved_date).toDateString() === today
+            ).length;
+
+            document.getElementById('activeAlerts').textContent = activeAlerts;
+            document.getElementById('investigating').textContent = investigating;
+            document.getElementById('resolvedToday').textContent = resolvedToday;
+        }
+
+        function investigate(alertId) {
+            const alert = db.getById(alertId);
+            if (alert) {
+                alert.status = 'Investigating';
+                db.update(alertId, alert);
+                loadFraudAlerts();
+                alert('Alert status updated to "Investigating"');
+            }
+        }
+
+        function resolve(alertId) {
+            const alert = db.getById(alertId);
+            if (alert) {
+                alert.status = 'Resolved';
+                alert.resolved_date = new Date().toISOString();
+                db.update(alertId, alert);
+                loadFraudAlerts();
+                alert('Alert marked as resolved');
+            }
+        }
+
+        function viewTransaction(transactionId) {
+            window.location.href = `transactions-functional.html?highlight=${transactionId}`;
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim() === '') {
+                loadFraudAlerts();
+            } else {
+                const results = db.search(query);
+                renderTable(results);
+            }
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Add Fraud Alert';
+            document.getElementById('fraudAlertForm').reset();
+            document.getElementById('alert_id').value = '';
+            document.getElementById('status').value = 'Active';
+
+            // Set default detected date to now
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('detected_date').value = now.toISOString().slice(0, 16);
+
+            openModal('fraudAlertModal');
+        }
+
+        function openEditModal() {
+            if (selectedRows.size !== 1) {
+                alert('Please select exactly one fraud alert to edit');
+                return;
+            }
+
+            const id = Array.from(selectedRows)[0];
+            const alert = db.getById(id);
+
+            if (alert) {
+                isEditMode = true;
+                document.getElementById('modalTitle').textContent = 'Edit Fraud Alert';
+                document.getElementById('alert_id').value = alert.id;
+                document.getElementById('transaction_id').value = alert.transaction_id;
+                document.getElementById('alert_type').value = alert.alert_type;
+                document.getElementById('severity').value = alert.severity;
+                document.getElementById('description').value = alert.description;
+                document.getElementById('detected_date').value = alert.detected_date ? alert.detected_date.slice(0, 16) : '';
+                document.getElementById('status').value = alert.status;
+                document.getElementById('resolved_date').value = alert.resolved_date ? alert.resolved_date.slice(0, 16) : '';
+                openModal('fraudAlertModal');
+            }
+        }
+
+        function handleSave() {
+            const data = {
+                transaction_id: document.getElementById('transaction_id').value,
+                alert_type: document.getElementById('alert_type').value,
+                severity: document.getElementById('severity').value,
+                description: document.getElementById('description').value,
+                detected_date: document.getElementById('detected_date').value,
+                status: document.getElementById('status').value,
+                resolved_date: document.getElementById('resolved_date').value || null
+            };
+
+            if (isEditMode) {
+                const id = document.getElementById('alert_id').value;
+                db.update(id, data);
+                alert('Fraud alert updated successfully!');
+            } else {
+                db.add(data);
+                alert('Fraud alert added successfully!');
+            }
+
+            closeModal('fraudAlertModal');
+            loadFraudAlerts();
+            clearSelections();
+        }
+
+        function handleDelete() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select at least one fraud alert to delete');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${selected.length} fraud alert(s)?`)) {
+                return;
+            }
+
+            const deleted = db.deleteMultiple(selected);
+            alert(`${deleted} fraud alert(s) deleted successfully!`);
+            loadFraudAlerts();
+            clearSelections();
+        }
+
+        // Utility functions
+        function toggleRowSelection(id, checkbox) {
+            if (checkbox.checked) {
+                selectedRows.add(id);
+            } else {
+                selectedRows.delete(id);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+            selectedRows.clear();
+
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    const id = parseInt(cb.getAttribute('data-id'));
+                    selectedRows.add(id);
+                }
+            });
+        }
+
+        function clearSelections() {
+            selectedRows.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+    </script>
+</body>
+
+</html>

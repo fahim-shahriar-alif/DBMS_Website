@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Predictions - ASA Data Server</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <style>
+        .confidence-high {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .confidence-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .confidence-low {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .prediction-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .type-bullish {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .type-bearish {
+            background: #ffeaea;
+            color: #e74c3c;
+        }
+
+        .type-neutral {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .model-badge {
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            background: #667eea;
+            color: white;
+        }
+
+        .prediction-accuracy {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .accuracy-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .accuracy-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .accuracy-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stock-selector {
+            margin-bottom: 20px;
+        }
+
+        .stock-selector select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        .price-change {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .change-positive {
+            color: #27ae60;
+        }
+
+        .change-negative {
+            color: #e74c3c;
+        }
+
+        .change-neutral {
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">Stock Price Prediction</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="users-functional.html">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="predictions-functional.html" class="active">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>🔮 Stock Price Predictions</h1>
+            <p>AI-powered stock price forecasting and market analysis</p>
+        </div>
+
+        <div class="prediction-accuracy">
+            <div class="accuracy-card">
+                <div class="accuracy-value" id="overallAccuracy">94.2%</div>
+                <div class="accuracy-label">Overall Accuracy</div>
+            </div>
+            <div class="accuracy-card">
+                <div class="accuracy-value" id="activePredictions">0</div>
+                <div class="accuracy-label">Active Predictions</div>
+            </div>
+            <div class="accuracy-card">
+                <div class="accuracy-value" id="todayPredictions">0</div>
+                <div class="accuracy-label">Today's Predictions</div>
+            </div>
+            <div class="accuracy-card">
+                <div class="accuracy-value" id="highConfidence">0</div>
+                <div class="accuracy-label">High Confidence</div>
+            </div>
+        </div>
+
+        <div class="stock-selector">
+            <label for="stockSelect">Filter by Stock: </label>
+            <select id="stockSelect" onchange="loadPredictions()">
+                <option value="">All Stocks</option>
+            </select>
+            <button class="btn-add" onclick="generatePredictions()" style="margin-left: 15px;">🤖 Generate AI
+                Predictions</button>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search predictions..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add Prediction</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>Prediction ID</th>
+                        <th>Stock</th>
+                        <th>Current Price</th>
+                        <th>Predicted Price</th>
+                        <th>Change</th>
+                        <th>Confidence</th>
+                        <th>Type</th>
+                        <th>Model</th>
+                        <th>Prediction Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="11" style="text-align: center; padding: 40px;">No predictions found. Click
+                            "Generate AI Predictions" to create forecasts.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="predictionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Prediction</h2>
+                <span class="close" onclick="closeModal('predictionModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="predictionForm">
+                    <input type="hidden" id="prediction_id">
+
+                    <div class="form-group">
+                        <label for="stock_id">Stock *</label>
+                        <select id="stock_id" required>
+                            <option value="">Select Stock</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="predicted_price">Predicted Price ($) *</label>
+                        <input type="number" id="predicted_price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confidence_level">Confidence Level (%) *</label>
+                        <input type="number" id="confidence_level" min="0" max="100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prediction_type">Prediction Type *</label>
+                        <select id="prediction_type" required>
+                            <option value="">Select Type</option>
+                            <option value="Bullish">Bullish (Price Increase)</option>
+                            <option value="Bearish">Bearish (Price Decrease)</option>
+                            <option value="Neutral">Neutral (Stable Price)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="model_used">Model Used *</label>
+                        <select id="model_used" required>
+                            <option value="">Select Model</option>
+                            <option value="LSTM">LSTM Neural Network</option>
+                            <option value="Random Forest">Random Forest</option>
+                            <option value="Linear Regression">Linear Regression</option>
+                            <option value="SVM">Support Vector Machine</option>
+                            <option value="Ensemble">Ensemble Model</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prediction_date">Prediction Date *</label>
+                        <input type="date" id="prediction_date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="Active">Active</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Expired">Expired</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal('predictionModal')">Cancel</button>
+                <button type="button" class="btn-save" onclick="handleSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/local-database.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
+        const db = new LocalDatabase('predictions');
+        const stocksDb = new LocalDatabase('stocks');
+        const companiesDb = new LocalDatabase('companies');
+        let selectedRows = new Set();
+        let isEditMode = false;
+        let currentStockId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStockOptions();
+            loadPredictions();
+            updateStats();
+            
+            // Set default prediction date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('prediction_date').value = tomorrow.toISOString().split('T')[0];
+        });
+
+        function loadStockOptions() {
+            const stocks = stocksDb.getAll();
+            const companies = companiesDb.getAll();
+            
+            // Load stock selector
+            const stockSelect = document.getElementById('stockSelect');
+            stockSelect.innerHTML = '<option value="">All Stocks</option>';
+            
+            // Load modal stock selector
+            const modalStockSelect = document.getElementById('stock_id');
+            modalStockSelect.innerHTML = '<option value="">Select Stock</option>';
+            
+            stocks.forEach(stock => {
+                const company = companies.find(c => c.id == stock.company_id);
+                const companyName = company ? company.company_name : 'Unknown Company';
+                const displayText = `${stock.symbol} - ${companyName}`;
+                
+                // Main selector
+                const option1 = document.createElement('option');
+                option1.value = stock.id;
+                option1.textContent = displayText;
+                stockSelect.appendChild(option1);
+                
+                // Modal selector
+                const option2 = document.createElement('option');
+                option2.value = stock.id;
+                option2.textContent = displayText;
+                modalStockSelect.appendChild(option2);
+            });
+        }
+
+        function generatePredictions() {
+            const stocks = stocksDb.getAll();
+            if (stocks.length === 0) {
+                alert('No stocks found. Please add stocks first.');
+                return;
+            }
+
+            const models = ['LSTM', 'Random Forest', 'Linear Regression', 'SVM', 'Ensemble'];
+            const types = ['Bullish', 'Bearish', 'Neutral'];
+            let generated = 0;
+
+            stocks.forEach(stock => {
+                // Generate 1-3 predictions per stock
+                const numPredictions = Math.floor(Math.random() * 3) + 1;
+                
+                for (let i = 0; i < numPredictions; i++) {
+                    const currentPrice = parseFloat(stock.current_price) || 100;
+                    const changePercent = (Math.random() - 0.5) * 0.3; // ±15% change
+                    const predictedPrice = currentPrice * (1 + changePercent);
+                    
+                    const predictionType = changePercent > 0.05 ? 'Bullish' : 
+                                         changePercent < -0.05 ? 'Bearish' : 'Neutral';
+                    
+                    const confidence = Math.floor(Math.random() * 30) + 70; // 70-100%
+                    const model = models[Math.floor(Math.random() * models.length)];
+                    
+                    // Prediction date (1-7 days from now)
+                    const predictionDate = new Date();
+                    predictionDate.setDate(predictionDate.getDate() + Math.floor(Math.random() * 7) + 1);
+                    
+                    db.add({
+                        stock_id: stock.id,
+                        predicted_price: predictedPrice.toFixed(2),
+                        confidence_level: confidence,
+                        prediction_type: predictionType,
+                        model_used: model,
+                        prediction_date: predictionDate.toISOString().split('T')[0],
+                        status: 'Active'
+                    });
+                    
+                    generated++;
+                }
+            });
+
+            alert(`Generated ${generated} AI predictions successfully!`);
+            loadPredictions();
+        }
+
+        function loadPredictions() {
+            const stockId = document.getElementById('stockSelect').value;
+            currentStockId = stockId;
+            
+            let predictions = db.getAll();
+            if (stockId) {
+                predictions = predictions.filter(p => p.stock_id == stockId);
+            }
+            
+            renderTable(predictions);
+            updateStats();
+        }
+
+        function renderTable(predictions) {
+            const tbody = document.getElementById('tableBody');
+            const stocks = stocksDb.getAll();
+            const companies = companiesDb.getAll();
+            
+            if (predictions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 40px;">No predictions found. Click "Generate AI Predictions" to create forecasts.</td></tr>';
+                return;
+            }
+            
+            // Sort by prediction date descending
+            predictions.sort((a, b) => new Date(b.prediction_date) - new Date(a.prediction_date));
+            
+            tbody.innerHTML = predictions.map(prediction => {
+                const stock = stocks.find(s => s.id == prediction.stock_id);
+                const company = companies.find(c => c.id == stock?.company_id);
+                
+                const stockSymbol = stock ? stock.symbol : 'Unknown';
+                const companyName = company ? company.company_name : 'Unknown Company';
+                const currentPrice = parseFloat(stock?.current_price || 0);
+                const predictedPrice = parseFloat(prediction.predicted_price);
+                const change = predictedPrice - currentPrice;
+                const changePercent = currentPrice > 0 ? (change / currentPrice * 100) : 0;
+                
+                const changeClass = change > 0 ? 'change-positive' : change < 0 ? 'change-negative' : 'change-neutral';
+                const confidenceClass = prediction.confidence_level >= 80 ? 'confidence-high' : 
+                                      prediction.confidence_level >= 60 ? 'confidence-medium' : 'confidence-low';
+                
+                return `
+                <tr>
+                    <td><input type="checkbox" data-id="${prediction.id}" onchange="toggleRowSelection(${prediction.id}, this)"></td>
+                    <td>PR-${prediction.id}</td>
+                    <td>
+                        <strong>${stockSymbol}</strong><br>
+                        <small style="color: #666;">${companyName}</small>
+                    </td>
+                    <td>$${currentPrice.toFixed(2)}</td>
+                    <td>$${predictedPrice.toFixed(2)}</td>
+                    <td class="price-change ${changeClass}">
+                        ${change >= 0 ? '+' : ''}$${change.toFixed(2)}<br>
+                        <small>(${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%)</small>
+                    </td>
+                    <td class="${confidenceClass}">${prediction.confidence_level}%</td>
+                    <td><span class="prediction-type type-${prediction.prediction_type.toLowerCase()}">${prediction.prediction_type}</span></td>
+                    <td><span class="model-badge">${prediction.model_used}</span></td>
+                    <td>${new Date(prediction.prediction_date).toLocaleDateString()}</td>
+                    <td><span class="badge badge-${prediction.status.toLowerCase()}">${prediction.status}</span></td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const predictions = db.getAll();
+            const today = new Date().toDateString();
+            
+            const activePredictions = predictions.filter(p => p.status === 'Active').length;
+            const todayPredictions = predictions.filter(p => 
+                new Date(p.prediction_date).toDateString() === today
+            ).length;
+            const highConfidence = predictions.filter(p => 
+                p.confidence_level >= 80 && p.status === 'Active'
+            ).length;
+            
+            document.getElementById('activePredictions').textContent = activePredictions;
+            document.getElementById('todayPredictions').textContent = todayPredictions;
+            document.getElementById('highConfidence').textContent = highConfidence;
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim() === '') {
+                loadPredictions();
+            } else {
+                const results = db.search(query);
+                const filtered = currentStockId ? 
+                    results.filter(p => p.stock_id == currentStockId) : results;
+                renderTable(filtered);
+            }
+        }
+
+        function openAddModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Add Prediction';
+            document.getElementById('predictionForm').reset();
+            document.getElementById('prediction_id').value = '';
+            document.getElementById('status').value = 'Active';
+            
+            // Set default prediction date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('prediction_date').value = tomorrow.toISOString().split('T')[0];
+            
+            if (currentStockId) {
+                document.getElementById('stock_id').value = currentStockId;
+            }
+            
+            openModal('predictionModal');
+        }
+
+        function openEditModal() {
+            if (selectedRows.size !== 1) {
+                alert('Please select exactly one prediction to edit');
+                return;
+            }
+            
+            const id = Array.from(selectedRows)[0];
+            const prediction = db.getById(id);
+            
+            if (prediction) {
+                isEditMode = true;
+                document.getElementById('modalTitle').textContent = 'Edit Prediction';
+                document.getElementById('prediction_id').value = prediction.id;
+                document.getElementById('stock_id').value = prediction.stock_id;
+                document.getElementById('predicted_price').value = prediction.predicted_price;
+                document.getElementById('confidence_level').value = prediction.confidence_level;
+                document.getElementById('prediction_type').value = prediction.prediction_type;
+                document.getElementById('model_used').value = prediction.model_used;
+                document.getElementById('prediction_date').value = prediction.prediction_date;
+                document.getElementById('status').value = prediction.status;
+                openModal('predictionModal');
+            }
+        }
+
+        function handleSave() {
+            const data = {
+                stock_id: document.getElementById('stock_id').value,
+                predicted_price: document.getElementById('predicted_price').value,
+                confidence_level: document.getElementById('confidence_level').value,
+                prediction_type: document.getElementById('prediction_type').value,
+                model_used: document.getElementById('model_used').value,
+                prediction_date: document.getElementById('prediction_date').value,
+                status: document.getElementById('status').value
+            };
+            
+            if (isEditMode) {
+                const id = document.getElementById('prediction_id').value;
+                db.update(id, data);
+                alert('Prediction updated successfully!');
+            } else {
+                db.add(data);
+                alert('Prediction added successfully!');
+            }
+            
+            closeModal('predictionModal');
+            loadPredictions();
+            clearSelections();
+        }
+
+        function handleDelete() {
+            const selected = Array.from(selectedRows);
+            if (selected.length === 0) {
+                alert('Please select at least one prediction to delete');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete ${selected.length} prediction(s)?`)) {
+                return;
+            }
+            
+            const deleted = db.deleteMultiple(selected);
+            alert(`${deleted} prediction(s) deleted successfully!`);
+            loadPredictions();
+            clearSelections();
+        }
+
+        // Utility functions
+        function toggleRowSelection(id, checkbox) {
+            if (checkbox.checked) {
+                selectedRows.add(id);
+            } else {
+                selectedRows.delete(id);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+            selectedRows.clear();
+            
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    const id = parseInt(cb.getAttribute('data-id'));
+                    selectedRows.add(id);
+                }
+            });
+        }
+
+        function clearSelections() {
+            selectedRows.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+    </script>
+</body>
+
+</html>

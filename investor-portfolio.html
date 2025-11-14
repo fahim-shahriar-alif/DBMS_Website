@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Portfolio - Investor Portal</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/table.css">
+  <style>
+    .portfolio-summary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .portfolio-summary h2 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    .portfolio-value {
+      font-size: 48px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .portfolio-change {
+      font-size: 20px;
+      margin: 10px 0;
+    }
+
+    .portfolio-change.positive {
+      color: #2ecc71;
+    }
+
+    .portfolio-change.negative {
+      color: #e74c3c;
+    }
+
+    .holdings-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .holdings-card h3 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .holding-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-left: 4px solid #667eea;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .holding-main {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .holding-symbol {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .holding-company {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .holding-detail {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .holding-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .holding-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .holding-gain {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .holding-gain.positive {
+      color: #27ae60;
+    }
+
+    .holding-gain.negative {
+      color: #e74c3c;
+    }
+
+    .allocation-chart {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .allocation-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .allocation-bar {
+      flex: 1;
+      height: 30px;
+      background: #667eea;
+      border-radius: 6px;
+      margin: 0 15px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .allocation-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .allocation-label {
+      min-width: 100px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .allocation-value {
+      min-width: 80px;
+      text-align: right;
+      font-weight: 600;
+      color: #667eea;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>👤 Investor Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="investorName">Welcome, Investor</p>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="dashboard-investor.html">📊 Dashboard</a></li>
+      <li><a href="investor-portfolio.html" class="active">💼 My Portfolio</a></li>
+      <li><a href="investor-transactions.html">💰 My Transactions</a></li>
+      <li><a href="investor-stocks.html">📈 Browse Stocks</a></li>
+      <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1>💼 My Portfolio</h1>
+      <p>Track your investments and portfolio performance</p>
+    </div>
+
+    <!-- Portfolio Summary -->
+    <div class="portfolio-summary">
+      <h2>Total Portfolio Value</h2>
+      <div class="portfolio-value" id="portfolioValue">$0.00</div>
+      <div class="portfolio-change" id="portfolioChange">
+        <span id="changeAmount">$0.00</span> (<span id="changePercent">0.00%</span>)
+      </div>
+      <p style="opacity: 0.8; margin: 10px 0 0 0;">Last updated: <span id="lastUpdated">-</span></p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid" style="margin-bottom: 30px;">
+      <div class="stat-card">
+        <div class="stat-icon blue">📊</div>
+        <div class="stat-info">
+          <h3>Total Holdings</h3>
+          <p class="stat-number" id="totalHoldings">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">💰</div>
+        <div class="stat-info">
+          <h3>Total Invested</h3>
+          <p class="stat-number" id="totalInvested">$0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">📈</div>
+        <div class="stat-info">
+          <h3>Best Performer</h3>
+          <p class="stat-number" id="bestPerformer">-</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">🎯</div>
+        <div class="stat-info">
+          <h3>Avg Return</h3>
+          <p class="stat-number" id="avgReturn">0%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Holdings -->
+    <div class="holdings-card">
+      <h3>📊 My Holdings</h3>
+      <div id="holdingsContainer">
+        <p style="text-align: center; color: #666; padding: 40px;">No holdings found. Start investing by browsing
+          stocks!</p>
+      </div>
+    </div>
+
+    <!-- Portfolio Allocation -->
+    <div class="allocation-chart">
+      <h3>📈 Portfolio Allocation</h3>
+      <div id="allocationContainer">
+        <p style="text-align: center; color: #666; padding: 20px;">No allocation data available</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script src="js/logout.js"></script>
+  <script>
+    // Check if user is logged in and has Investor role
+    window.addEventListener('DOMContentLoaded', () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userRole = localStorage.getItem('userRole');
+      const userFullName = localStorage.getItem('userFullName');
+
+      if (!isLoggedIn || userRole !== 'Investor') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Display investor name
+      document.getElementById('investorName').textContent = `Welcome, ${userFullName}`;
+
+      // Load portfolio
+      loadPortfolio();
+    });
+
+    function loadPortfolio() {
+      const userId = localStorage.getItem('userId');
+      const transactionsDb = new LocalDatabase('stock_transactions');
+      const stocksDb = new LocalDatabase('stocks');
+      const companiesDb = new LocalDatabase('companies');
+
+      // Get investor's completed transactions
+      const transactions = transactionsDb.getAll()
+        .filter(tx => tx.investor_id == userId && tx.status === 'Completed');
+
+      // Calculate holdings
+      const holdings = calculateHoldings(transactions, stocksDb, companiesDb);
+
+      // Update portfolio summary
+      updatePortfolioSummary(holdings);
+
+      // Render holdings
+      renderHoldings(holdings);
+
+      // Render allocation
+      renderAllocation(holdings);
+
+      // Update last updated time
+      document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    }
+
+    function calculateHoldings(transactions, stocksDb, companiesDb) {
+      const holdingsMap = {};
+
+      // Calculate net shares for each stock
+      transactions.forEach(tx => {
+        const stockId = tx.stock_id;
+
+        if (!holdingsMap[stockId]) {
+          holdingsMap[stockId] = {
+            stockId: stockId,
+            totalShares: 0,
+            totalInvested: 0,
+            buyTransactions: 0,
+            sellTransactions: 0
+          };
+        }
+
+        if (tx.transaction_type === 'Buy') {
+          holdingsMap[stockId].totalShares += parseInt(tx.quantity);
+          holdingsMap[stockId].totalInvested += parseFloat(tx.total_amount);
+          holdingsMap[stockId].buyTransactions++;
+        } else if (tx.transaction_type === 'Sell') {
+          holdingsMap[stockId].totalShares -= parseInt(tx.quantity);
+          holdingsMap[stockId].totalInvested -= parseFloat(tx.total_amount);
+          holdingsMap[stockId].sellTransactions++;
+        }
+      });
+
+      // Convert to array and add stock details
+      const holdings = Object.values(holdingsMap)
+        .filter(holding => holding.totalShares > 0) // Only show stocks we still own
+        .map(holding => {
+          const stock = stocksDb.getById(holding.stockId);
+          const company = companiesDb.getById(stock?.company_id);
+
+          const currentPrice = parseFloat(stock?.current_price || 0);
+          const currentValue = holding.totalShares * currentPrice;
+          const avgCost = holding.totalInvested / holding.totalShares;
+          const gainLoss = currentValue - holding.totalInvested;
+          const gainLossPercent = (gainLoss / holding.totalInvested) * 100;
+
+          return {
+            ...holding,
+            stock: stock,
+            company: company,
+            symbol: stock?.symbol || 'Unknown',
+            companyName: company?.company_name || 'Unknown Company',
+            currentPrice: currentPrice,
+            currentValue: currentValue,
+            avgCost: avgCost,
+            gainLoss: gainLoss,
+            gainLossPercent: gainLossPercent
+          };
+        });
+
+      return holdings;
+    }
+
+    function updatePortfolioSummary(holdings) {
+      const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
+      const totalInvested = holdings.reduce((sum, h) => sum + h.totalInvested, 0);
+      const totalGainLoss = totalValue - totalInvested;
+      const totalGainLossPercent = totalInvested > 0 ? (totalGainLoss / totalInvested) * 100 : 0;
+
+      document.getElementById('portfolioValue').textContent = '$' + totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const changeElement = document.getElementById('portfolioChange');
+      const changeSign = totalGainLoss >= 0 ? '+' : '';
+      document.getElementById('changeAmount').textContent = changeSign + '$' + Math.abs(totalGainLoss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('changePercent').textContent = changeSign + totalGainLossPercent.toFixed(2) + '%';
+      changeElement.className = 'portfolio-change ' + (totalGainLoss >= 0 ? 'positive' : 'negative');
+
+      // Update stats
+      document.getElementById('totalHoldings').textContent = holdings.length;
+      document.getElementById('totalInvested').textContent = '$' + totalInvested.toLocaleString();
+
+      const bestPerformer = holdings.length > 0 ? holdings.reduce((prev, current) =>
+        current.gainLossPercent > prev.gainLossPercent ? current : prev
+      ) : null;
+      document.getElementById('bestPerformer').textContent = bestPerformer ?
+        `${bestPerformer.symbol} (+${bestPerformer.gainLossPercent.toFixed(2)}%)` : '-';
+
+      const avgReturn = holdings.length > 0 ?
+        holdings.reduce((sum, h) => sum + h.gainLossPercent, 0) / holdings.length : 0;
+      document.getElementById('avgReturn').textContent = avgReturn.toFixed(2) + '%';
+    }
+
+    function renderHoldings(holdings) {
+      const container = document.getElementById('holdingsContainer');
+
+      if (holdings.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">No holdings found. Start investing by browsing stocks!</p>';
+        return;
+      }
+
+      container.innerHTML = holdings.map(holding => {
+        const gainLossClass = holding.gainLoss >= 0 ? 'positive' : 'negative';
+        const gainLossSign = holding.gainLoss >= 0 ? '+' : '';
+
+        return `
+                    <div class="holding-item">
+                        <div class="holding-main">
+                            <div class="holding-symbol">${holding.symbol}</div>
+                            <div class="holding-company">${holding.companyName}</div>
+                        </div>
+                        
+                        <div class="holding-detail">
+                            <div class="holding-label">Shares Owned</div>
+                            <div class="holding-value">${holding.totalShares.toLocaleString()}</div>
+                        </div>
+                        
+                        <div class="holding-detail">
+                            <div class="holding-label">Current Value</div>
+                            <div class="holding-value">$${holding.currentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div style="font-size: 12px; color: #666;">@ $${holding.currentPrice.toFixed(2)}/share</div>
+                        </div>
+                        
+                        <div class="holding-detail">
+                            <div class="holding-label">Gain/Loss</div>
+                            <div class="holding-gain ${gainLossClass}">
+                                ${gainLossSign}$${Math.abs(holding.gainLoss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div class="holding-gain ${gainLossClass}" style="font-size: 14px;">
+                                (${gainLossSign}${holding.gainLossPercent.toFixed(2)}%)
+                            </div>
+                        </div>
+                    </div>
+                `;
+      }).join('');
+    }
+
+    function renderAllocation(holdings) {
+      const container = document.getElementById('allocationContainer');
+
+      if (holdings.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No allocation data available</p>';
+        return;
+      }
+
+      const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
+
+      container.innerHTML = holdings
+        .sort((a, b) => b.currentValue - a.currentValue)
+        .map(holding => {
+          const percentage = (holding.currentValue / totalValue) * 100;
+
+          return `
+                        <div class="allocation-item">
+                            <div class="allocation-label">${holding.symbol}</div>
+                            <div class="allocation-bar">
+                                <div class="allocation-fill" style="width: ${percentage}%">
+                                    ${percentage.toFixed(1)}%
+                                </div>
+                            </div>
+                            <div class="allocation-value">$${holding.currentValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                        </div>
+                    `;
+        }).join('');
+    }
+  </script>
+</body>
+
+</html>
