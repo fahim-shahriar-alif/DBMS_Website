@@ -65,6 +65,8 @@ class LocalDatabase {
             formattedId = 50000 + nextId; // Start from 50001
         } else if (this.tableName === 'institutions') {
             formattedId = 60000 + nextId; // Start from 60001
+        } else if (this.tableName === 'trades') {
+            formattedId = 70000 + nextId; // Start from 70001
         }
         
         const newRecord = {

@@ -4,10 +4,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trade Management - ASA Data Server</title>
+    <title>Trades - ASA Data Server</title>
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/table.css">
     <link rel="stylesheet" href="css/modal.css">
+    <style>
+        .action-buttons-inline {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+    </style>
 </head>
 
 <body>
@@ -35,39 +69,8 @@
 
     <div class="main-content">
         <div class="page-header">
-            <h1>🔄 Trade Management</h1>
-            <p>Manage trade execution, order matching, and settlement processing</p>
-        </div>
-
-        <div class="stats-grid" style="margin-bottom: 30px;">
-            <div class="stat-card">
-                <div class="stat-icon blue">🔄</div>
-                <div class="stat-info">
-                    <h3>Total Trades</h3>
-                    <p class="stat-number" id="totalTrades">0</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon green">✅</div>
-                <div class="stat-info">
-                    <h3>Completed</h3>
-                    <p class="stat-number" id="completedTrades">0</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon orange">⏳</div>
-                <div class="stat-info">
-                    <h3>Pending</h3>
-                    <p class="stat-number" id="pendingTrades">0</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon purple">💵</div>
-                <div class="stat-info">
-                    <h3>Trade Volume</h3>
-                    <p class="stat-number" id="tradeVolume">$0</p>
-                </div>
-            </div>
+            <h1>🔄 Trades Management</h1>
+            <p>Manage stock trades between buyers and sellers</p>
         </div>
 
         <div class="table-controls">
@@ -76,7 +79,7 @@
                 <button class="btn-search" onclick="handleSearch()">Search</button>
             </div>
             <div class="action-buttons">
-                <button class="btn-add" onclick="openAddModal()">+ Add Trade</button>
+                <button class="btn-add" onclick="openAddModal()">+ Add</button>
             </div>
         </div>
 
@@ -84,23 +87,21 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
                         <th>Trade ID</th>
                         <th>Buyer</th>
                         <th>Seller</th>
-                        <th>Stock Symbol</th>
+                        <th>Stock ID</th>
                         <th>Shares</th>
                         <th>Trade Price</th>
                         <th>Trade Amount</th>
-                        <th>Trade Date</th>
                         <th>Settlement Date</th>
                         <th>Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="11" style="text-align: center; padding: 40px;">No trades found. Click "+ Add" to
-                            create your first trade.</td>
+                        <td colspan="10" style="text-align: center; padding: 40px;">Loading...</td>
                     </tr>
                 </tbody>
             </table>
@@ -119,53 +120,54 @@
                     <input type="hidden" id="trade_id">
 
                     <div class="form-group">
-                        <label for="buyer_name">Buyer Name *</label>
-                        <input type="text" id="buyer_name" required>
+                        <label for="buyer">Buyer *</label>
+                        <select id="buyer" required>
+                            <option value="">Select Buyer</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="seller_name">Seller Name *</label>
-                        <input type="text" id="seller_name" required>
+                        <label for="seller">Seller *</label>
+                        <select id="seller" required>
+                            <option value="">Select Seller</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="stock_symbol">Stock Symbol *</label>
-                        <input type="text" id="stock_symbol" required placeholder="e.g., AAPL">
+                        <label for="stock_id">Stock ID *</label>
+                        <select id="stock_id" required>
+                            <option value="">Select Stock</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="shares">Number of Shares *</label>
-                        <input type="number" id="shares" required min="1">
+                        <label for="shares">Shares *</label>
+                        <input type="number" id="shares" required min="1" oninput="calculateTradeAmount()">
                     </div>
 
                     <div class="form-group">
-                        <label for="trade_price">Trade Price ($) *</label>
-                        <input type="number" id="trade_price" required step="0.01" min="0">
+                        <label for="trade_price">Trade Price *</label>
+                        <input type="number" id="trade_price" required step="0.01" min="0"
+                            oninput="calculateTradeAmount()">
                     </div>
 
                     <div class="form-group">
-                        <label for="trade_amount">Trade Amount ($)</label>
-                        <input type="number" id="trade_amount" step="0.01" readonly>
+                        <label for="trade_amount">Trade Amount</label>
+                        <input type="number" id="trade_amount" step="0.01" readonly style="background: #f5f5f5;">
                     </div>
 
                     <div class="form-group">
-                        <label for="trade_date">Trade Date</label>
-                        <input type="date" id="trade_date">
+                        <label for="settlement_date">Settlement Date *</label>
+                        <input type="date" id="settlement_date" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="settlement_date">Settlement Date</label>
-                        <input type="date" id="settlement_date">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="status">Status</label>
-                        <select id="status">
+                        <label for="status">Status *</label>
+                        <select id="status" required>
                             <option value="Pending">Pending</option>
-                            <option value="Executed">Executed</option>
-                            <option value="Settled">Settled</option>
-                            <option value="Failed">Failed</option>
+                            <option value="Completed">Completed</option>
                             <option value="Cancelled">Cancelled</option>
+                            <option value="Failed">Failed</option>
                         </select>
                     </div>
                 </form>
@@ -181,18 +183,54 @@
     <script src="js/logout.js"></script>
     <script>
         const db = new LocalDatabase('trades');
-        let selectedRows = new Set();
+        const investorsDb = new LocalDatabase('investors');
+        const stocksDb = new LocalDatabase('stocks');
         let isEditMode = false;
 
         window.addEventListener('DOMContentLoaded', () => {
             loadTrades();
-
-            // Auto-calculate trade amount
-            document.getElementById('shares').addEventListener('input', calculateAmount);
-            document.getElementById('trade_price').addEventListener('input', calculateAmount);
+            loadInvestors();
+            loadStocks();
         });
 
-        function calculateAmount() {
+        function loadInvestors() {
+            const investors = investorsDb.getAll();
+            const buyerSelect = document.getElementById('buyer');
+            const sellerSelect = document.getElementById('seller');
+
+            buyerSelect.innerHTML = '<option value="">Select Buyer</option>';
+            sellerSelect.innerHTML = '<option value="">Select Seller</option>';
+
+            investors.forEach(investor => {
+                const buyerOption = document.createElement('option');
+                buyerOption.value = investor.id;
+                buyerOption.textContent = `${investor.id} - ${investor.name}`;
+                buyerOption.setAttribute('data-name', investor.name);
+                buyerSelect.appendChild(buyerOption);
+
+                const sellerOption = document.createElement('option');
+                sellerOption.value = investor.id;
+                sellerOption.textContent = `${investor.id} - ${investor.name}`;
+                sellerOption.setAttribute('data-name', investor.name);
+                sellerSelect.appendChild(sellerOption);
+            });
+        }
+
+        function loadStocks() {
+            const stocks = stocksDb.getAll();
+            const stockSelect = document.getElementById('stock_id');
+
+            stockSelect.innerHTML = '<option value="">Select Stock</option>';
+
+            stocks.forEach(stock => {
+                const option = document.createElement('option');
+                option.value = stock.id;
+                option.textContent = `${stock.id} - ${stock.company_name}`;
+                stockSelect.appendChild(option);
+            });
+        }
+
+        function calculateTradeAmount() {
             const shares = parseFloat(document.getElementById('shares').value) || 0;
             const price = parseFloat(document.getElementById('trade_price').value) || 0;
             document.getElementById('trade_amount').value = (shares * price).toFixed(2);
@@ -207,23 +245,27 @@
             const tbody = document.getElementById('tableBody');
 
             if (trades.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 40px;">No trades found. Click "+ Add" to create your first trade.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">No trades found</td></tr>';
                 return;
             }
 
             tbody.innerHTML = trades.map(trade => `
                 <tr>
-                    <td><input type="checkbox" data-id="${trade.id}" onchange="toggleRowSelection(${trade.id}, this)"></td>
                     <td>${trade.id}</td>
-                    <td>${trade.buyer_name}</td>
-                    <td>${trade.seller_name}</td>
-                    <td><strong>${trade.stock_symbol}</strong></td>
+                    <td>${trade.buyer_name || trade.buyer}</td>
+                    <td>${trade.seller_name || trade.seller}</td>
+                    <td>${trade.stock_id}</td>
                     <td>${parseInt(trade.shares).toLocaleString()}</td>
                     <td>$${parseFloat(trade.trade_price).toFixed(2)}</td>
                     <td><strong>$${parseFloat(trade.trade_amount).toFixed(2)}</strong></td>
-                    <td>${trade.trade_date || '-'}</td>
                     <td>${trade.settlement_date || '-'}</td>
                     <td><span class="badge badge-${trade.status.toLowerCase()}">${trade.status}</span></td>
+                    <td>
+                        <div class="action-buttons-inline">
+                            <button class="btn-small btn-edit" onclick="openEditModal(${trade.id})" title="Edit">✏️ Edit</button>
+                            <button class="btn-small btn-delete" onclick="handleDelete(${trade.id})" title="Remove" style="background: #e74c3c;">🗑️ Remove</button>
+                        </div>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -243,39 +285,28 @@
             document.getElementById('modalTitle').textContent = 'Add Trade';
             document.getElementById('tradeForm').reset();
             document.getElementById('trade_id').value = '';
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('trade_date').value = today;
-            // Settlement date is typically T+2
-            const settlement = new Date();
-            settlement.setDate(settlement.getDate() + 2);
-            document.getElementById('settlement_date').value = settlement.toISOString().split('T')[0];
+            document.getElementById('trade_amount').value = '';
+            document.getElementById('settlement_date').value = new Date().toISOString().split('T')[0];
+            loadInvestors();
+            loadStocks();
             openModal('tradeModal');
         }
 
-        function openEditModal() {
-            const selected = Array.from(selectedRows);
-            if (selected.length === 0) {
-                alert('Please select a trade to edit');
-                return;
-            }
-            if (selected.length > 1) {
-                alert('Please select only one trade to edit');
-                return;
-            }
-
+        function openEditModal(id) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = 'Edit Trade';
+            loadInvestors();
+            loadStocks();
 
-            const trade = db.getById(selected[0]);
+            const trade = db.getById(id);
             if (trade) {
                 document.getElementById('trade_id').value = trade.id;
-                document.getElementById('buyer_name').value = trade.buyer_name;
-                document.getElementById('seller_name').value = trade.seller_name;
-                document.getElementById('stock_symbol').value = trade.stock_symbol;
+                document.getElementById('buyer').value = trade.buyer;
+                document.getElementById('seller').value = trade.seller;
+                document.getElementById('stock_id').value = trade.stock_id;
                 document.getElementById('shares').value = trade.shares;
                 document.getElementById('trade_price').value = trade.trade_price;
                 document.getElementById('trade_amount').value = trade.trade_amount;
-                document.getElementById('trade_date').value = trade.trade_date || '';
                 document.getElementById('settlement_date').value = trade.settlement_date || '';
                 document.getElementById('status').value = trade.status;
                 openModal('tradeModal');
@@ -283,14 +314,20 @@
         }
 
         function handleSave() {
+            const buyerSelect = document.getElementById('buyer');
+            const sellerSelect = document.getElementById('seller');
+            const buyerOption = buyerSelect.options[buyerSelect.selectedIndex];
+            const sellerOption = sellerSelect.options[sellerSelect.selectedIndex];
+
             const data = {
-                buyer_name: document.getElementById('buyer_name').value,
-                seller_name: document.getElementById('seller_name').value,
-                stock_symbol: document.getElementById('stock_symbol').value.toUpperCase(),
+                buyer: buyerSelect.value,
+                buyer_name: buyerOption.getAttribute('data-name') || '',
+                seller: sellerSelect.value,
+                seller_name: sellerOption.getAttribute('data-name') || '',
+                stock_id: document.getElementById('stock_id').value,
                 shares: document.getElementById('shares').value,
                 trade_price: document.getElementById('trade_price').value,
                 trade_amount: document.getElementById('trade_amount').value,
-                trade_date: document.getElementById('trade_date').value,
                 settlement_date: document.getElementById('settlement_date').value,
                 status: document.getElementById('status').value
             };
@@ -306,54 +343,16 @@
 
             closeModal('tradeModal');
             loadTrades();
-            clearSelections();
         }
 
-        function handleDelete() {
-            const selected = Array.from(selectedRows);
-            if (selected.length === 0) {
-                alert('Please select at least one trade to delete');
+        function handleDelete(id) {
+            if (!confirm('Are you sure you want to delete this trade?')) {
                 return;
             }
 
-            if (!confirm(`Are you sure you want to delete ${selected.length} trade(s)?`)) {
-                return;
-            }
-
-            const deleted = db.deleteMultiple(selected);
-            alert(`${deleted} trade(s) deleted successfully!`);
+            db.delete(id);
+            alert('Trade deleted successfully!');
             loadTrades();
-            clearSelections();
-        }
-
-        function toggleRowSelection(id, checkbox) {
-            if (checkbox.checked) {
-                selectedRows.add(id);
-            } else {
-                selectedRows.delete(id);
-            }
-        }
-
-        function toggleSelectAll() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
-            selectedRows.clear();
-
-            checkboxes.forEach(cb => {
-                cb.checked = selectAll.checked;
-                if (selectAll.checked) {
-                    const id = parseInt(cb.getAttribute('data-id'));
-                    selectedRows.add(id);
-                }
-            });
-        }
-
-        function clearSelections() {
-            selectedRows.clear();
-            document.getElementById('selectAll').checked = false;
-            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
-                cb.checked = false;
-            });
         }
 
         function openModal(modalId) {
