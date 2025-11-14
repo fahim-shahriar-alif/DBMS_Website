@@ -111,8 +111,6 @@
             </div>
             <div class="action-buttons">
                 <button class="btn-add" onclick="openAddModal()">+ Add</button>
-                <button class="btn-edit" onclick="openEditModal()">✏️ Edit</button>
-                <button class="btn-remove" onclick="handleDelete()">🗑️ Remove</button>
             </div>
         </div>
 
@@ -120,14 +118,12 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
                         <th>Investor ID</th>
-                        <th>Name</th>
+                        <th>Investor Name</th>
                         <th>Account Type</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Registration Date</th>
-                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -179,13 +175,7 @@
                         <input type="date" id="registration_date">
                     </div>
 
-                    <div class="form-group">
-                        <label for="status">Status</label>
-                        <select id="status">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
+
                 </form>
             </div>
             <div class="modal-footer">
@@ -199,7 +189,6 @@
     <script src="js/logout.js"></script>
     <script>
         const db = new LocalDatabase('investors');
-        let selectedRows = new Set();
         let isEditMode = false;
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -228,24 +217,22 @@
             const tbody = document.getElementById('tableBody');
 
             if (investors.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No investors found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No investors found</td></tr>';
                 return;
             }
 
             tbody.innerHTML = investors.map(investor => `
                 <tr>
-                    <td><input type="checkbox" data-id="${investor.id}" onchange="toggleRowSelection(${investor.id}, this)"></td>
                     <td>${investor.id}</td>
                     <td>${investor.name}</td>
                     <td>${investor.account_type}</td>
                     <td>${investor.email || '-'}</td>
                     <td>${investor.phone || '-'}</td>
                     <td>${investor.registration_date || '-'}</td>
-                    <td><span class="badge badge-${investor.status.toLowerCase()}">${investor.status}</span></td>
                     <td>
                         <div class="action-buttons-inline">
-                            <button class="btn-small btn-edit" onclick="editSingleInvestor(${investor.id})" title="Edit">✏️</button>
-                            <button class="btn-small btn-delete" onclick="deleteSingleInvestor(${investor.id})" title="Delete">🗑️</button>
+                            <button class="btn-small btn-edit" onclick="openEditModal(${investor.id})" title="Edit">✏️ Edit</button>
+                            <button class="btn-small btn-delete" onclick="handleDelete(${investor.id})" title="Remove" style="background: #e74c3c;">🗑️ Remove</button>
                         </div>
                     </td>
                 </tr>
@@ -271,21 +258,11 @@
             openModal('investorModal');
         }
 
-        function openEditModal() {
-            const selected = Array.from(selectedRows);
-            if (selected.length === 0) {
-                alert('Please select an investor to edit');
-                return;
-            }
-            if (selected.length > 1) {
-                alert('Please select only one investor to edit');
-                return;
-            }
-
+        function openEditModal(id) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = 'Edit Investor';
 
-            const investor = db.getById(selected[0]);
+            const investor = db.getById(id);
             if (investor) {
                 document.getElementById('investor_id').value = investor.id;
                 document.getElementById('name').value = investor.name;
@@ -293,7 +270,6 @@
                 document.getElementById('email').value = investor.email || '';
                 document.getElementById('phone').value = investor.phone || '';
                 document.getElementById('registration_date').value = investor.registration_date || '';
-                document.getElementById('status').value = investor.status;
                 openModal('investorModal');
             }
         }
@@ -304,8 +280,7 @@
                 account_type: document.getElementById('account_type').value,
                 email: document.getElementById('email').value,
                 phone: document.getElementById('phone').value,
-                registration_date: document.getElementById('registration_date').value,
-                status: document.getElementById('status').value
+                registration_date: document.getElementById('registration_date').value
             };
 
             if (isEditMode) {
@@ -319,54 +294,16 @@
 
             closeModal('investorModal');
             loadInvestors();
-            clearSelections();
         }
 
-        function handleDelete() {
-            const selected = Array.from(selectedRows);
-            if (selected.length === 0) {
-                alert('Please select at least one investor to delete');
+        function handleDelete(id) {
+            if (!confirm('Are you sure you want to delete this investor?')) {
                 return;
             }
 
-            if (!confirm(`Are you sure you want to delete ${selected.length} investor(s)?`)) {
-                return;
-            }
-
-            const deleted = db.deleteMultiple(selected);
-            alert(`${deleted} investor(s) deleted successfully!`);
+            db.delete(id);
+            alert('Investor deleted successfully!');
             loadInvestors();
-            clearSelections();
-        }
-
-        function toggleRowSelection(id, checkbox) {
-            if (checkbox.checked) {
-                selectedRows.add(id);
-            } else {
-                selectedRows.delete(id);
-            }
-        }
-
-        function toggleSelectAll() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
-            selectedRows.clear();
-
-            checkboxes.forEach(cb => {
-                cb.checked = selectAll.checked;
-                if (selectAll.checked) {
-                    const id = parseInt(cb.getAttribute('data-id'));
-                    selectedRows.add(id);
-                }
-            });
-        }
-
-        function clearSelections() {
-            selectedRows.clear();
-            document.getElementById('selectAll').checked = false;
-            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
-                cb.checked = false;
-            });
         }
 
         function openModal(modalId) {
@@ -388,33 +325,6 @@
                 handleSearch();
             }
         });
-
-        // Individual row actions
-        function editSingleInvestor(id) {
-            const investor = db.getById(id);
-            if (investor) {
-                isEditMode = true;
-                document.getElementById('modalTitle').textContent = 'Edit Investor';
-                document.getElementById('investor_id').value = investor.id;
-                document.getElementById('name').value = investor.name;
-                document.getElementById('account_type').value = investor.account_type;
-                document.getElementById('email').value = investor.email || '';
-                document.getElementById('phone').value = investor.phone || '';
-                document.getElementById('registration_date').value = investor.registration_date || '';
-                document.getElementById('status').value = investor.status;
-                openModal('investorModal');
-            }
-        }
-
-        function deleteSingleInvestor(id) {
-            const investor = db.getById(id);
-            if (investor && confirm(`Are you sure you want to delete investor "${investor.name}"?`)) {
-                db.delete(id);
-                alert('Investor deleted successfully!');
-                loadInvestors();
-                clearSelections();
-            }
-        }
     </script>
 </body>
 
