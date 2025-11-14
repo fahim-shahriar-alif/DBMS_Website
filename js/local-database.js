@@ -51,8 +51,14 @@ class LocalDatabase {
         const records = this.getAll();
         const nextId = parseInt(localStorage.getItem(`${this.tableName}_next_id`) || 1);
         
+        // Format ID based on table type
+        let formattedId = nextId;
+        if (this.tableName === 'companies') {
+            formattedId = 10000 + nextId; // Start from 10001
+        }
+        
         const newRecord = {
-            id: nextId,
+            id: formattedId,
             ...data
         };
         
