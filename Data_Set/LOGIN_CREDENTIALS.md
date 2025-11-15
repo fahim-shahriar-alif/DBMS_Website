@@ -34,10 +34,10 @@
 
 ---
 
-### 📊 Analyst Account
+### 📊 Data Analyst Account
 - **Username:** `mjohnson`
 - **Password:** `password123`
-- **Role:** Analyst
+- **Role:** Data Analyst
 - **Full Name:** Mary Johnson
 - **Department:** Risk Management
 - **Dashboard:** dashboard-analyst.html (to be created)
@@ -51,6 +51,18 @@
 - **Full Name:** Robert Brown
 - **Department:** Audit
 - **Dashboard:** dashboard-auditor.html (to be created)
+
+---
+
+### 📈 Stock Management Team Account
+- **Username:** `stockteam`
+- **Password:** `stockteam123`
+- **Role:** Stock Management Team
+- **Access:**
+  - Full Edit: Stocks, Price History, Companies
+  - View Only: Transactions, Trades, Investors
+  - No Access: Audit Reports, Fraud Alerts, Predictions, Users
+- **Dashboard:** stock-team-dashboard.html
 
 ---
 

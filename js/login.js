@@ -46,6 +46,16 @@ function handleLogin(event) {
         return;
     }
     
+    if (username === 'stockteam' && password === 'stockteam123') {
+        // Stock Management Team login
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', 'stockteam');
+        sessionStorage.setItem('userRole', 'stock-team');
+        sessionStorage.setItem('userFullName', 'Stock Management Team');
+        window.location.href = 'stock-team-dashboard.html';
+        return;
+    }
+    
     // If not demo credentials, check database
     const usersDb = JSON.parse(localStorage.getItem('users') || '[]');
     const user = usersDb.find(u => u.username === username && u.password === password);
@@ -81,6 +91,8 @@ window.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'auditor-dashboard.html';
         } else if (role === 'analyst') {
             window.location.href = 'analyst-dashboard.html';
+        } else if (role === 'stock-team') {
+            window.location.href = 'stock-team-dashboard.html';
         } else {
             window.location.href = 'dashboard-asa.html';
         }
