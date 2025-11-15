@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/table.css">
     <link rel="stylesheet" href="css/modal.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .price-positive {
             color: #27ae60;
@@ -144,9 +145,7 @@
 
         <div class="chart-container" id="chartContainer" style="display: none;">
             <h3>Price Chart</h3>
-            <div class="price-chart">
-                📈 Interactive price chart would be displayed here
-            </div>
+            <canvas id="priceChart"></canvas>
         </div>
 
         <div class="table-controls">
@@ -163,7 +162,6 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
                         <th>Date</th>
                         <th>Stock</th>
                         <th>Opening Price</th>
@@ -176,7 +174,7 @@
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px;">Select a stock to view price history.
+                        <td colspan="8" style="text-align: center; padding: 40px;">Select a stock to view price history.
                         </td>
                     </tr>
                 </tbody>
@@ -245,8 +243,6 @@
     <script>
         const db = new LocalDatabase('price_history');
         const stocksDb = new LocalDatabase('stocks');
-        const companiesDb = new LocalDatabase('companies');
-        let selectedRows = new Set();
         let isEditMode = false;
         let currentStockId = null;
 
@@ -258,9 +254,10 @@
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
         });
 
+        let priceChart = null;
+
         function loadStockOptions() {
             const stocks = stocksDb.getAll();
-            const companies = companiesDb.getAll();
 
             // Load stock selector
             const stockSelect = document.getElementById('stockSelect');
@@ -271,9 +268,7 @@
             modalStockSelect.innerHTML = '<option value="">Select Stock</option>';
 
             stocks.forEach(stock => {
-                const company = companies.find(c => c.id == stock.company_id);
-                const companyName = company ? company.company_name : 'Unknown Company';
-                const displayText = `${stock.symbol} - ${companyName}`;
+                const displayText = `${stock.id} - ${stock.company_name}`;
 
                 // Main selector
                 const option1 = document.createElement('option');
@@ -350,7 +345,7 @@
             const stocks = stocksDb.getAll();
 
             if (priceHistory.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No price history found for this stock.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px;">No price history found for this stock.</td></tr>';
                 return;
             }
 
@@ -359,7 +354,7 @@
 
             tbody.innerHTML = priceHistory.map(price => {
                 const stock = stocks.find(s => s.id == price.stock_id);
-                const stockSymbol = stock ? stock.symbol : 'Unknown';
+                const stockId = stock ? stock.id : 'Unknown';
 
                 const opening = parseFloat(price.opening_price);
                 const closing = parseFloat(price.closing_price);
@@ -370,9 +365,8 @@
 
                 return `
                 <tr>
-                    <td><input type="checkbox" data-id="${price.id}" onchange="toggleRowSelection(${price.id}, this)"></td>
                     <td>${new Date(price.date).toLocaleDateString()}</td>
-                    <td><strong>${stockSymbol}</strong></td>
+                    <td><strong>${stockId}</strong></td>
                     <td>$${parseFloat(price.opening_price).toFixed(2)}</td>
                     <td>$${parseFloat(price.closing_price).toFixed(2)}</td>
                     <td>$${parseFloat(price.high_price).toFixed(2)}</td>
@@ -412,6 +406,92 @@
             document.getElementById('weekHigh').textContent = `$${weekHigh.toFixed(2)}`;
             document.getElementById('weekLow').textContent = `$${weekLow.toFixed(2)}`;
             document.getElementById('avgVolume').textContent = Math.floor(avgVolume).toLocaleString();
+
+            // Render chart
+            renderPriceChart(priceHistory);
+        }
+
+        function renderPriceChart(priceHistory) {
+            // Sort by date ascending for chart
+            const sorted = [...priceHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const labels = sorted.map(p => new Date(p.date).toLocaleDateString());
+            const closingPrices = sorted.map(p => parseFloat(p.closing_price));
+            const highPrices = sorted.map(p => parseFloat(p.high_price));
+            const lowPrices = sorted.map(p => parseFloat(p.low_price));
+
+            // Destroy existing chart if it exists
+            if (priceChart) {
+                priceChart.destroy();
+            }
+
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Closing Price',
+                            data: closingPrices,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'High Price',
+                            data: highPrices,
+                            borderColor: '#27ae60',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Low Price',
+                            data: lowPrices,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function (value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function handleSearch() {
@@ -497,55 +577,6 @@
 
             closeModal('priceHistoryModal');
             loadPriceHistory();
-            clearSelections();
-        }
-
-        function handleDelete() {
-            const selected = Array.from(selectedRows);
-            if (selected.length === 0) {
-                alert('Please select at least one price entry to delete');
-                return;
-            }
-
-            if (!confirm(`Are you sure you want to delete ${selected.length} price entry(s)?`)) {
-                return;
-            }
-
-            const deleted = db.deleteMultiple(selected);
-            alert(`${deleted} price entry(s) deleted successfully!`);
-            loadPriceHistory();
-            clearSelections();
-        }
-
-        // Utility functions
-        function toggleRowSelection(id, checkbox) {
-            if (checkbox.checked) {
-                selectedRows.add(id);
-            } else {
-                selectedRows.delete(id);
-            }
-        }
-
-        function toggleSelectAll() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
-            selectedRows.clear();
-
-            checkboxes.forEach(cb => {
-                cb.checked = selectAll.checked;
-                if (selectAll.checked) {
-                    const id = parseInt(cb.getAttribute('data-id'));
-                    selectedRows.add(id);
-                }
-            });
-        }
-
-        function clearSelections() {
-            selectedRows.clear();
-            document.getElementById('selectAll').checked = false;
-            document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
-                cb.checked = false;
-            });
         }
 
         function openModal(modalId) {

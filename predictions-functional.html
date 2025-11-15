@@ -284,7 +284,6 @@
     <script>
         const db = new LocalDatabase('predictions');
         const stocksDb = new LocalDatabase('stocks');
-        const companiesDb = new LocalDatabase('companies');
         let selectedRows = new Set();
         let isEditMode = false;
         let currentStockId = null;
@@ -293,7 +292,7 @@
             loadStockOptions();
             loadPredictions();
             updateStats();
-            
+
             // Set default prediction date to tomorrow
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -302,27 +301,24 @@
 
         function loadStockOptions() {
             const stocks = stocksDb.getAll();
-            const companies = companiesDb.getAll();
-            
+
             // Load stock selector
             const stockSelect = document.getElementById('stockSelect');
             stockSelect.innerHTML = '<option value="">All Stocks</option>';
-            
+
             // Load modal stock selector
             const modalStockSelect = document.getElementById('stock_id');
             modalStockSelect.innerHTML = '<option value="">Select Stock</option>';
-            
+
             stocks.forEach(stock => {
-                const company = companies.find(c => c.id == stock.company_id);
-                const companyName = company ? company.company_name : 'Unknown Company';
-                const displayText = `${stock.symbol} - ${companyName}`;
-                
+                const displayText = `${stock.id} - ${stock.company_name}`;
+
                 // Main selector
                 const option1 = document.createElement('option');
                 option1.value = stock.id;
                 option1.textContent = displayText;
                 stockSelect.appendChild(option1);
-                
+
                 // Modal selector
                 const option2 = document.createElement('option');
                 option2.value = stock.id;
@@ -332,62 +328,70 @@
         }
 
         function generatePredictions() {
+            const selectedStockId = document.getElementById('stockSelect').value;
             const stocks = stocksDb.getAll();
+
             if (stocks.length === 0) {
                 alert('No stocks found. Please add stocks first.');
                 return;
             }
 
             const models = ['LSTM', 'Random Forest', 'Linear Regression', 'SVM', 'Ensemble'];
-            const types = ['Bullish', 'Bearish', 'Neutral'];
             let generated = 0;
+            let stocksToPredict = [];
 
-            stocks.forEach(stock => {
-                // Generate 1-3 predictions per stock
-                const numPredictions = Math.floor(Math.random() * 3) + 1;
-                
-                for (let i = 0; i < numPredictions; i++) {
-                    const currentPrice = parseFloat(stock.current_price) || 100;
-                    const changePercent = (Math.random() - 0.5) * 0.3; // ±15% change
-                    const predictedPrice = currentPrice * (1 + changePercent);
-                    
-                    const predictionType = changePercent > 0.05 ? 'Bullish' : 
-                                         changePercent < -0.05 ? 'Bearish' : 'Neutral';
-                    
-                    const confidence = Math.floor(Math.random() * 30) + 70; // 70-100%
-                    const model = models[Math.floor(Math.random() * models.length)];
-                    
-                    // Prediction date (1-7 days from now)
-                    const predictionDate = new Date();
-                    predictionDate.setDate(predictionDate.getDate() + Math.floor(Math.random() * 7) + 1);
-                    
-                    db.add({
-                        stock_id: stock.id,
-                        predicted_price: predictedPrice.toFixed(2),
-                        confidence_level: confidence,
-                        prediction_type: predictionType,
-                        model_used: model,
-                        prediction_date: predictionDate.toISOString().split('T')[0],
-                        status: 'Active'
-                    });
-                    
-                    generated++;
+            // If a specific stock is selected, generate prediction only for that stock
+            if (selectedStockId) {
+                const stock = stocks.find(s => s.id == selectedStockId);
+                if (stock) {
+                    stocksToPredict = [stock];
                 }
+            } else {
+                // If "All Stocks" is selected, generate predictions for all stocks
+                stocksToPredict = stocks;
+            }
+
+            stocksToPredict.forEach(stock => {
+                const currentPrice = parseFloat(stock.current_price) || 100;
+                const changePercent = (Math.random() - 0.5) * 0.3; // ±15% change
+                const predictedPrice = currentPrice * (1 + changePercent);
+
+                const predictionType = changePercent > 0.05 ? 'Bullish' :
+                    changePercent < -0.05 ? 'Bearish' : 'Neutral';
+
+                const confidence = Math.floor(Math.random() * 30) + 70; // 70-100%
+                const model = models[Math.floor(Math.random() * models.length)];
+
+                // Prediction date (tomorrow)
+                const predictionDate = new Date();
+                predictionDate.setDate(predictionDate.getDate() + 1);
+
+                db.add({
+                    stock_id: stock.id,
+                    predicted_price: predictedPrice.toFixed(2),
+                    confidence_level: confidence,
+                    prediction_type: predictionType,
+                    model_used: model,
+                    prediction_date: predictionDate.toISOString().split('T')[0],
+                    status: 'Active'
+                });
+
+                generated++;
             });
 
-            alert(`Generated ${generated} AI predictions successfully!`);
+            alert(`Generated ${generated} AI prediction(s) successfully!`);
             loadPredictions();
         }
 
         function loadPredictions() {
             const stockId = document.getElementById('stockSelect').value;
             currentStockId = stockId;
-            
+
             let predictions = db.getAll();
             if (stockId) {
                 predictions = predictions.filter(p => p.stock_id == stockId);
             }
-            
+
             renderTable(predictions);
             updateStats();
         }
@@ -395,37 +399,35 @@
         function renderTable(predictions) {
             const tbody = document.getElementById('tableBody');
             const stocks = stocksDb.getAll();
-            const companies = companiesDb.getAll();
-            
+
             if (predictions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 40px;">No predictions found. Click "Generate AI Predictions" to create forecasts.</td></tr>';
                 return;
             }
-            
+
             // Sort by prediction date descending
             predictions.sort((a, b) => new Date(b.prediction_date) - new Date(a.prediction_date));
-            
+
             tbody.innerHTML = predictions.map(prediction => {
                 const stock = stocks.find(s => s.id == prediction.stock_id);
-                const company = companies.find(c => c.id == stock?.company_id);
-                
-                const stockSymbol = stock ? stock.symbol : 'Unknown';
-                const companyName = company ? company.company_name : 'Unknown Company';
+
+                const stockId = stock ? stock.id : 'Unknown';
+                const companyName = stock ? stock.company_name : 'Unknown Company';
                 const currentPrice = parseFloat(stock?.current_price || 0);
                 const predictedPrice = parseFloat(prediction.predicted_price);
                 const change = predictedPrice - currentPrice;
                 const changePercent = currentPrice > 0 ? (change / currentPrice * 100) : 0;
-                
+
                 const changeClass = change > 0 ? 'change-positive' : change < 0 ? 'change-negative' : 'change-neutral';
-                const confidenceClass = prediction.confidence_level >= 80 ? 'confidence-high' : 
-                                      prediction.confidence_level >= 60 ? 'confidence-medium' : 'confidence-low';
-                
+                const confidenceClass = prediction.confidence_level >= 80 ? 'confidence-high' :
+                    prediction.confidence_level >= 60 ? 'confidence-medium' : 'confidence-low';
+
                 return `
                 <tr>
                     <td><input type="checkbox" data-id="${prediction.id}" onchange="toggleRowSelection(${prediction.id}, this)"></td>
                     <td>PR-${prediction.id}</td>
                     <td>
-                        <strong>${stockSymbol}</strong><br>
+                        <strong>${stockId}</strong><br>
                         <small style="color: #666;">${companyName}</small>
                     </td>
                     <td>$${currentPrice.toFixed(2)}</td>
@@ -447,15 +449,15 @@
         function updateStats() {
             const predictions = db.getAll();
             const today = new Date().toDateString();
-            
+
             const activePredictions = predictions.filter(p => p.status === 'Active').length;
-            const todayPredictions = predictions.filter(p => 
+            const todayPredictions = predictions.filter(p =>
                 new Date(p.prediction_date).toDateString() === today
             ).length;
-            const highConfidence = predictions.filter(p => 
+            const highConfidence = predictions.filter(p =>
                 p.confidence_level >= 80 && p.status === 'Active'
             ).length;
-            
+
             document.getElementById('activePredictions').textContent = activePredictions;
             document.getElementById('todayPredictions').textContent = todayPredictions;
             document.getElementById('highConfidence').textContent = highConfidence;
@@ -467,7 +469,7 @@
                 loadPredictions();
             } else {
                 const results = db.search(query);
-                const filtered = currentStockId ? 
+                const filtered = currentStockId ?
                     results.filter(p => p.stock_id == currentStockId) : results;
                 renderTable(filtered);
             }
@@ -479,16 +481,16 @@
             document.getElementById('predictionForm').reset();
             document.getElementById('prediction_id').value = '';
             document.getElementById('status').value = 'Active';
-            
+
             // Set default prediction date to tomorrow
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('prediction_date').value = tomorrow.toISOString().split('T')[0];
-            
+
             if (currentStockId) {
                 document.getElementById('stock_id').value = currentStockId;
             }
-            
+
             openModal('predictionModal');
         }
 
@@ -497,10 +499,10 @@
                 alert('Please select exactly one prediction to edit');
                 return;
             }
-            
+
             const id = Array.from(selectedRows)[0];
             const prediction = db.getById(id);
-            
+
             if (prediction) {
                 isEditMode = true;
                 document.getElementById('modalTitle').textContent = 'Edit Prediction';
@@ -526,7 +528,7 @@
                 prediction_date: document.getElementById('prediction_date').value,
                 status: document.getElementById('status').value
             };
-            
+
             if (isEditMode) {
                 const id = document.getElementById('prediction_id').value;
                 db.update(id, data);
@@ -535,7 +537,7 @@
                 db.add(data);
                 alert('Prediction added successfully!');
             }
-            
+
             closeModal('predictionModal');
             loadPredictions();
             clearSelections();
@@ -547,11 +549,11 @@
                 alert('Please select at least one prediction to delete');
                 return;
             }
-            
+
             if (!confirm(`Are you sure you want to delete ${selected.length} prediction(s)?`)) {
                 return;
             }
-            
+
             const deleted = db.deleteMultiple(selected);
             alert(`${deleted} prediction(s) deleted successfully!`);
             loadPredictions();
@@ -571,7 +573,7 @@
             const selectAll = document.getElementById('selectAll');
             const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
             selectedRows.clear();
-            
+
             checkboxes.forEach(cb => {
                 cb.checked = selectAll.checked;
                 if (selectAll.checked) {
@@ -597,7 +599,7 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
             }
