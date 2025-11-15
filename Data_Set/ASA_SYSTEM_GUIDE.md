@@ -1,6 +1,6 @@
 # 🏛️ ASA Data Server - System Guide
 
-## American Stock Association Data Management System
+## Association for Social Advancement Data Management System
 
 This system implements the architecture shown in the rich picture, connecting all stakeholders through a central ASA Data Server.
 

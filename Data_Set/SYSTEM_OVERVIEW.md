@@ -4,7 +4,7 @@
 
 ### 🎯 What is ASA Data Server?
 
-**ASA (American Stock Association) Data Server** is a centralized stock market data management system that connects all stakeholders in the stock market ecosystem.
+**ASA (Association for Social Advancement) Data Server** is a centralized stock market data management system that connects all stakeholders in the stock market ecosystem.
 
 ---
 

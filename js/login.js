@@ -26,6 +26,16 @@ function handleLogin(event) {
         return;
     }
     
+    if (username === 'auditor' && password === 'auditor123') {
+        // Auditor login
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', 'auditor');
+        sessionStorage.setItem('userRole', 'auditor');
+        sessionStorage.setItem('userFullName', 'Demo Auditor');
+        window.location.href = 'auditor-dashboard.html';
+        return;
+    }
+    
     // If not demo credentials, check database
     const usersDb = JSON.parse(localStorage.getItem('users') || '[]');
     const user = usersDb.find(u => u.username === username && u.password === password);
@@ -57,6 +67,8 @@ window.addEventListener('DOMContentLoaded', () => {
         // Redirect based on role
         if (role === 'investor') {
             window.location.href = 'investor-dashboard.html';
+        } else if (role === 'auditor') {
+            window.location.href = 'auditor-dashboard.html';
         } else {
             window.location.href = 'dashboard-asa.html';
         }

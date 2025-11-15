@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auditor Dashboard - ASA Data Server</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/table.css">
+  <style>
+    .audit-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .summary-card {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary-card h3 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .summary-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #f39c12;
+    }
+
+    .welcome-section {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+    }
+
+    .welcome-section h1 {
+      margin: 0 0 10px 0;
+    }
+
+    .welcome-section p {
+      margin: 0;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🏛️ ASA Auditor Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="auditorName">Auditor</p>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="auditor-dashboard.html" class="active">📊 Dashboard</a></li>
+      <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+      <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+      <li><a href="companies-functional.html">🏢 Companies</a></li>
+      <li><a href="transactions-functional.html">💰 Transactions</a></li>
+      <li><a href="trades-functional.html">🔄 Trades</a></li>
+      <li><a href="stocks-functional.html">📈 Stocks</a></li>
+      <li><a href="investors-functional.html">👤 Investors</a></li>
+      <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+      <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="welcome-section">
+      <h1>Welcome back, <span id="welcomeName">Auditor</span>!</h1>
+      <p>Compliance & Audit Management Portal</p>
+    </div>
+
+    <div class="audit-summary">
+      <div class="summary-card">
+        <h3>Total Audit Reports</h3>
+        <div class="summary-value" id="totalReports">0</div>
+      </div>
+      <div class="summary-card">
+        <h3>Pending Audits</h3>
+        <div class="summary-value" id="pendingAudits">0</div>
+      </div>
+      <div class="summary-card">
+        <h3>Active Fraud Alerts</h3>
+        <div class="summary-value" id="activeFraudAlerts">0</div>
+      </div>
+      <div class="summary-card">
+        <h3>Companies Audited</h3>
+        <div class="summary-value" id="companiesAudited">0</div>
+      </div>
+    </div>
+
+    <div class="page-header">
+      <h2>Recent Audit Reports</h2>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Audit ID</th>
+            <th>Auditor Name</th>
+            <th>Company ID</th>
+            <th>Audit Date</th>
+            <th>Risk Level</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="auditsBody">
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px;">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-header" style="margin-top: 40px;">
+      <h2>Recent Fraud Alerts</h2>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Alert ID</th>
+            <th>Transaction ID</th>
+            <th>Alert Type</th>
+            <th>Severity</th>
+            <th>Detected Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="fraudAlertsBody">
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px;">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script>
+    // Check if auditor is logged in
+    const userRole = sessionStorage.getItem('userRole');
+    const auditorName = sessionStorage.getItem('userFullName') || 'Demo Auditor';
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+
+    if (!isLoggedIn || userRole !== 'auditor') {
+      window.location.href = 'login.html';
+    }
+
+    // Display auditor name
+    document.getElementById('auditorName').textContent = auditorName;
+    document.getElementById('welcomeName').textContent = auditorName;
+
+    // Load auditor data
+    const auditReportsDb = new LocalDatabase('audit_reports');
+    const fraudAlertsDb = new LocalDatabase('fraud_alerts');
+
+    function loadDashboard() {
+      const auditReports = auditReportsDb.getAll();
+      const fraudAlerts = fraudAlertsDb.getAll();
+
+      // Calculate stats
+      const totalReports = auditReports.length;
+      const pendingAudits = auditReports.filter(r => !r.status || r.status === 'Pending').length;
+      const activeFraudAlerts = fraudAlerts.filter(f => f.status === 'Active').length;
+
+      // Count unique companies audited
+      const companiesAudited = new Set(auditReports.map(r => r.company_id)).size;
+
+      document.getElementById('totalReports').textContent = totalReports;
+      document.getElementById('pendingAudits').textContent = pendingAudits;
+      document.getElementById('activeFraudAlerts').textContent = activeFraudAlerts;
+      document.getElementById('companiesAudited').textContent = companiesAudited;
+
+      // Display recent audit reports
+      renderAuditReports(auditReports.slice(0, 10));
+
+      // Display recent fraud alerts
+      renderFraudAlerts(fraudAlerts.slice(0, 10));
+    }
+
+    function renderAuditReports(reports) {
+      const tbody = document.getElementById('auditsBody');
+
+      if (reports.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No audit reports found</td></tr>';
+        return;
+      }
+
+      const riskColors = {
+        'Low': '#28a745',
+        'Medium': '#ffc107',
+        'High': '#fd7e14',
+        'Critical': '#dc3545'
+      };
+
+      tbody.innerHTML = reports.map(report => `
+                <tr>
+                    <td>${report.id}</td>
+                    <td>${report.auditor_name}</td>
+                    <td>${report.company_id}</td>
+                    <td>${report.audit_date || '-'}</td>
+                    <td><span class="badge" style="background: ${riskColors[report.risk_level]}; color: white;">${report.risk_level}</span></td>
+                    <td>${report.status || '-'}</td>
+                </tr>
+            `).join('');
+    }
+
+    function renderFraudAlerts(alerts) {
+      const tbody = document.getElementById('fraudAlertsBody');
+
+      if (alerts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No fraud alerts found</td></tr>';
+        return;
+      }
+
+      const severityColors = {
+        'High': '#e74c3c',
+        'Medium': '#f39c12',
+        'Low': '#27ae60'
+      };
+
+      tbody.innerHTML = alerts.map(alert => `
+                <tr>
+                    <td>FA-${alert.id}</td>
+                    <td>${alert.transaction_id}</td>
+                    <td>${alert.alert_type}</td>
+                    <td><span style="color: ${severityColors[alert.severity]}; font-weight: bold;">${alert.severity}</span></td>
+                    <td>${new Date(alert.detected_date).toLocaleDateString()}</td>
+                    <td><span class="badge badge-${alert.status.toLowerCase().replace(' ', '-')}">${alert.status}</span></td>
+                </tr>
+            `).join('');
+    }
+
+    function handleLogout() {
+      sessionStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    // Load dashboard on page load
+    loadDashboard();
+  </script>
+</body>
+
+</html>
