@@ -66,6 +66,18 @@
 
 ---
 
+### 🔄 Trade Management Team Account
+- **Username:** `tradeteam`
+- **Password:** `tradeteam123`
+- **Role:** Trade Management Team
+- **Access:**
+  - Full Edit: Trades, Transactions, Investors
+  - View Only: Stocks, Companies, Price History, Institutions
+  - No Access: Audit Reports, Fraud Alerts, Predictions, Users
+- **Dashboard:** trade-team-dashboard.html
+
+---
+
 ## How to Login
 
 1. Open `login.html` in your browser

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Management Dashboard - ASA Data Server</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/table.css">
+  <style>
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 25px;
+      border-radius: 10px;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.teal {
+      background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+    }
+
+    .stat-card.green {
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    }
+
+    .stat-card.orange {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    }
+
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .stat-card .change {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .action-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .action-card:hover {
+      border-color: #16a085;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-card .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .action-card h4 {
+      margin: 0;
+      color: #2c3e50;
+    }
+
+    .recent-trades {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .trade-item {
+      padding: 15px;
+      border-bottom: 1px solid #ecf0f1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .trade-item:last-child {
+      border-bottom: none;
+    }
+
+    .trade-icon {
+      font-size: 24px;
+      margin-right: 15px;
+    }
+
+    .trade-details {
+      flex: 1;
+    }
+
+    .trade-time {
+      color: #7f8c8d;
+      font-size: 12px;
+    }
+
+    .trade-type-buy {
+      color: #27ae60;
+      font-weight: bold;
+    }
+
+    .trade-type-sell {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🏛️ ASA Trade Management Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="tradeTeamName">Trade Management Team</p>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="trade-team-dashboard.html" class="active">📊 Dashboard</a></li>
+      <li><a href="trades-functional.html">🔄 Trades</a></li>
+      <li><a href="transactions-functional.html">💰 Transactions</a></li>
+      <li><a href="investors-functional.html">👤 Investors</a></li>
+      <li><a href="stocks-functional.html">📈 Stocks</a></li>
+      <li><a href="companies-functional.html">🏢 Companies</a></li>
+      <li><a href="price-history-functional.html">📊 Price History</a></li>
+      <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+      <li><a href="#" class="logout" onclick="handleLogout()">🚪 Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="welcome-section">
+      <h1>Welcome back, <span id="welcomeName">Trade Management Team</span>!</h1>
+      <p>Trade & Transaction Management Portal</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card teal">
+        <h3>🔄 Total Trades</h3>
+        <div class="value" id="totalTrades">0</div>
+        <div class="change">All time trades</div>
+      </div>
+
+      <div class="stat-card green">
+        <h3>💰 Transactions</h3>
+        <div class="value" id="totalTransactions">0</div>
+        <div class="change">Total transactions</div>
+      </div>
+
+      <div class="stat-card orange">
+        <h3>📈 Today's Trades</h3>
+        <div class="value" id="todayTrades">0</div>
+        <div class="change">Trades executed today</div>
+      </div>
+
+      <div class="stat-card">
+        <h3>👤 Active Investors</h3>
+        <div class="value" id="activeInvestors">0</div>
+        <div class="change">Trading investors</div>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <div class="action-card" onclick="window.location.href='trades-functional.html'">
+        <div class="icon">🔄</div>
+        <h4>Manage Trades</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Execute and monitor trades</p>
+      </div>
+
+      <div class="action-card" onclick="window.location.href='transactions-functional.html'">
+        <div class="icon">💰</div>
+        <h4>Transactions</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Process transactions</p>
+      </div>
+
+      <div class="action-card" onclick="window.location.href='investors-functional.html'">
+        <div class="icon">👤</div>
+        <h4>Manage Investors</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Update investor accounts</p>
+      </div>
+
+      <div class="action-card" onclick="window.location.href='stocks-functional.html'">
+        <div class="icon">📈</div>
+        <h4>View Stocks</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Check stock information</p>
+      </div>
+    </div>
+
+    <div class="recent-trades">
+      <h2 style="margin-top: 0;">🔄 Recent Trades</h2>
+      <div id="recentTradesList">
+        <div class="trade-item">
+          <span class="trade-icon">📈</span>
+          <div class="trade-details">
+            <strong class="trade-type-buy">BUY</strong> - Stock Purchase
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #7f8c8d;">100 shares executed</p>
+          </div>
+          <div class="trade-time">2 hours ago</div>
+        </div>
+        <div class="trade-item">
+          <span class="trade-icon">📉</span>
+          <div class="trade-details">
+            <strong class="trade-type-sell">SELL</strong> - Stock Sale
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #7f8c8d;">50 shares executed</p>
+          </div>
+          <div class="trade-time">4 hours ago</div>
+        </div>
+        <div class="trade-item">
+          <span class="trade-icon">📈</span>
+          <div class="trade-details">
+            <strong class="trade-type-buy">BUY</strong> - Stock Purchase
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #7f8c8d;">200 shares executed</p>
+          </div>
+          <div class="trade-time">1 day ago</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script>
+    // Check if trade team is logged in
+    const userRole = sessionStorage.getItem('userRole');
+    const tradeTeamName = sessionStorage.getItem('userFullName') || 'Trade Management Team';
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+
+    if (!isLoggedIn || userRole !== 'trade-team') {
+      window.location.href = 'login.html';
+    }
+
+    // Display trade team name
+    document.getElementById('tradeTeamName').textContent = tradeTeamName;
+    document.getElementById('welcomeName').textContent = tradeTeamName;
+
+    // Load trade team data
+    const tradesDb = new LocalDatabase('trades');
+    const transactionsDb = new LocalDatabase('transactions');
+    const investorsDb = new LocalDatabase('investors');
+
+    function loadDashboardData() {
+      const trades = tradesDb.getAll();
+      const transactions = transactionsDb.getAll();
+      const investors = investorsDb.getAll();
+
+      // Update stats
+      document.getElementById('totalTrades').textContent = trades.length;
+      document.getElementById('totalTransactions').textContent = transactions.length;
+
+      // Count today's trades
+      const today = new Date().toISOString().split('T')[0];
+      const todayTrades = trades.filter(trade => {
+        const tradeDate = new Date(trade.trade_date).toISOString().split('T')[0];
+        return tradeDate === today;
+      }).length;
+      document.getElementById('todayTrades').textContent = todayTrades;
+
+      // Count active investors (those with trades)
+      const activeInvestorIds = new Set(trades.map(t => t.investor_id));
+      document.getElementById('activeInvestors').textContent = activeInvestorIds.size;
+
+      // Load recent trades
+      loadRecentTrades(trades);
+    }
+
+    function loadRecentTrades(trades) {
+      if (trades.length === 0) return;
+
+      // Sort by date and get last 5
+      const recentTrades = trades
+        .sort((a, b) => new Date(b.trade_date) - new Date(a.trade_date))
+        .slice(0, 5);
+
+      const tradesList = document.getElementById('recentTradesList');
+      tradesList.innerHTML = recentTrades.map(trade => {
+        const tradeDate = new Date(trade.trade_date);
+        const timeAgo = getTimeAgo(tradeDate);
+        const tradeTypeClass = trade.trade_type === 'Buy' ? 'trade-type-buy' : 'trade-type-sell';
+        const icon = trade.trade_type === 'Buy' ? '📈' : '📉';
+
+        return `
+          <div class="trade-item">
+            <span class="trade-icon">${icon}</span>
+            <div class="trade-details">
+              <strong class="${tradeTypeClass}">${trade.trade_type.toUpperCase()}</strong> - ${trade.quantity} shares @ $${trade.price_per_share}
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #7f8c8d;">Total: $${trade.total_amount}</p>
+            </div>
+            <div class="trade-time">${timeAgo}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+
+      if (seconds < 60) return 'Just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + ' minutes ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+      if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
+      return date.toLocaleDateString();
+    }
+
+    function handleLogout() {
+      sessionStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    // Load data on page load
+    loadDashboardData();
+  </script>
+</body>
+
+</html>

@@ -39,6 +39,11 @@
             color: white;
         }
 
+        .role-trade {
+            background: #16a085;
+            color: white;
+        }
+
         .role-viewer {
             background: #95a5a6;
             color: white;
@@ -247,6 +252,7 @@
                             <option value="Analyst">Data Analyst</option>
                             <option value="Auditor">Auditor</option>
                             <option value="Stock Team">Stock Management Team</option>
+                            <option value="Trade Team">Trade Management Team</option>
                             <option value="Viewer">Viewer</option>
                         </select>
                     </div>
@@ -382,7 +388,8 @@
         function getDisplayRole(role) {
             const roleMap = {
                 'Analyst': 'Data Analyst',
-                'Stock Team': 'Stock Management Team'
+                'Stock Team': 'Stock Management Team',
+                'Trade Team': 'Trade Management Team'
             };
             return roleMap[role] || role;
         }

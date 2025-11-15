@@ -20,6 +20,7 @@ function checkAuth() {
         isAuditor: userRole === 'auditor',
         isAnalyst: userRole === 'analyst',
         isStockTeam: userRole === 'stock-team',
+        isTradeTeam: userRole === 'trade-team',
         username: sessionStorage.getItem('username'),
         fullName: sessionStorage.getItem('userFullName'),
         investorId: sessionStorage.getItem('investorId')
@@ -83,6 +84,11 @@ function applyInvestorReadOnlyMode() {
     if (auth && auth.isStockTeam) {
         // Apply stock team-specific controls
         applyStockTeamMode();
+    }
+    
+    if (auth && auth.isTradeTeam) {
+        // Apply trade team-specific controls
+        applyTradeTeamMode();
     }
 }
 
@@ -345,6 +351,83 @@ function updateStockTeamNavigation() {
     }
 }
 
+// Apply trade team mode
+function applyTradeTeamMode() {
+    const currentPage = window.location.pathname.split('/').pop();
+    
+    // Pages where trade team has full edit access
+    const fullAccessPages = ['trades-functional.html', 'transactions-functional.html', 'investors-functional.html'];
+    
+    // If not on full access page, make it read-only
+    if (!fullAccessPages.includes(currentPage)) {
+        // Hide add, edit, remove buttons on read-only pages
+        const addButtons = document.querySelectorAll('.btn-add, .btn-edit, .btn-remove');
+        addButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        // Hide checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.style.display = 'none';
+        });
+        
+        // Hide action buttons in tables
+        const actionButtons = document.querySelectorAll('.action-buttons-inline');
+        actionButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        // Add "(View Only)" to page title
+        const pageHeader = document.querySelector('.page-header h1');
+        if (pageHeader && !pageHeader.textContent.includes('(View Only)')) {
+            pageHeader.textContent += ' (View Only)';
+        }
+    }
+    
+    // Update navbar branding
+    const navBrand = document.querySelector('.nav-brand h2');
+    if (navBrand) {
+        navBrand.textContent = '🏛️ ASA Trade Management Portal';
+    }
+    
+    const navSubtitle = document.querySelector('.nav-brand p');
+    if (navSubtitle) {
+        const auth = checkAuth();
+        navSubtitle.textContent = auth.fullName;
+    }
+    
+    // Update navigation menu for trade team
+    updateTradeTeamNavigation();
+}
+
+// Update navigation menu for trade team portal
+function updateTradeTeamNavigation() {
+    const navMenu = document.querySelector('.nav-menu');
+    if (navMenu) {
+        navMenu.innerHTML = `
+            <li><a href="trade-team-dashboard.html">📊 Dashboard</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        `;
+        
+        // Highlight active page
+        const currentPage = window.location.pathname.split('/').pop();
+        const links = navMenu.querySelectorAll('a');
+        links.forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            }
+        });
+    }
+}
+
 // Logout function for investor
 function handleInvestorLogout() {
     sessionStorage.clear();
@@ -364,6 +447,8 @@ document.addEventListener('DOMContentLoaded', () => {
             applyAnalystMode();
         } else if (auth && auth.isStockTeam) {
             applyStockTeamMode();
+        } else if (auth && auth.isTradeTeam) {
+            applyTradeTeamMode();
         }
     }, 100);
 });
