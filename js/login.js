@@ -66,6 +66,36 @@ function handleLogin(event) {
         return;
     }
     
+    if (username === 'marketdata' && password === 'marketdata123') {
+        // Market Data Provider login
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', 'marketdata');
+        sessionStorage.setItem('userRole', 'market-data');
+        sessionStorage.setItem('userFullName', 'Market Data Provider');
+        window.location.href = 'market-data-dashboard.html';
+        return;
+    }
+    
+    if (username === 'topmgmt' && password === 'topmgmt123') {
+        // Top Management login
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', 'topmgmt');
+        sessionStorage.setItem('userRole', 'top-management');
+        sessionStorage.setItem('userFullName', 'Top Management');
+        window.location.href = 'top-management-dashboard.html';
+        return;
+    }
+    
+    if (username === 'board' && password === 'board123') {
+        // Board of Directors login
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', 'board');
+        sessionStorage.setItem('userRole', 'board-directors');
+        sessionStorage.setItem('userFullName', 'Board of Directors');
+        window.location.href = 'board-directors-dashboard.html';
+        return;
+    }
+    
     // If not demo credentials, check database
     const usersDb = JSON.parse(localStorage.getItem('users') || '[]');
     const user = usersDb.find(u => u.username === username && u.password === password);
@@ -105,6 +135,12 @@ window.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'stock-team-dashboard.html';
         } else if (role === 'trade-team') {
             window.location.href = 'trade-team-dashboard.html';
+        } else if (role === 'market-data') {
+            window.location.href = 'market-data-dashboard.html';
+        } else if (role === 'top-management') {
+            window.location.href = 'top-management-dashboard.html';
+        } else if (role === 'board-directors') {
+            window.location.href = 'board-directors-dashboard.html';
         } else {
             window.location.href = 'dashboard-asa.html';
         }

@@ -78,6 +78,44 @@
 
 ---
 
+### 📊 Market Data Provider Account
+- **Username:** `marketdata`
+- **Password:** `marketdata123`
+- **Role:** Market Data Provider
+- **Access:**
+  - Full Edit: Price History, Stocks (price updates), Companies (market data)
+  - View Only: Transactions, Trades, Investors, Institutions
+  - No Access: Audit Reports, Fraud Alerts, Predictions, Users
+- **Dashboard:** market-data-dashboard.html
+
+---
+
+### 👔 Top Management Account
+- **Username:** `topmgmt`
+- **Password:** `topmgmt123`
+- **Role:** Top Management
+- **Access:**
+  - Full Edit: Companies, Institutions, Audit Reports
+  - View Only: Stocks, Transactions, Trades, Investors, Price History, Fraud Alerts, Predictions
+  - No Access: Users Management (Admin only)
+- **Dashboard:** top-management-dashboard.html
+- **Description:** Executive-level access with strategic oversight capabilities
+
+---
+
+### 🏛️ Board of Directors Account
+- **Username:** `board`
+- **Password:** `board123`
+- **Role:** Board of Directors
+- **Access:**
+  - Full Edit: Companies (governance), Institutions (strategic partnerships), Audit Reports (oversight)
+  - Governance View: All operational data for fiduciary oversight
+  - No Access: Users Management (Admin only), operational controls
+- **Dashboard:** board-directors-dashboard.html
+- **Description:** Highest governance level with fiduciary responsibilities and strategic oversight
+
+---
+
 ## How to Login
 
 1. Open `login.html` in your browser

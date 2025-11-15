@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Executive Dashboard - ASA Data Server</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/table.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 25px;
+      border-radius: 10px;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.red {
+      background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+    }
+
+    .stat-card.blue {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+
+    .stat-card.green {
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    }
+
+    .stat-card.orange {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    }
+
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .stat-card .change {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .chart-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .chart-card h3 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+
+    .quick-insights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .insight-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .insight-card.warning {
+      border-left-color: #f39c12;
+    }
+
+    .insight-card.success {
+      border-left-color: #27ae60;
+    }
+
+    .insight-card.danger {
+      border-left-color: #e74c3c;
+    }
+
+    .insight-card h4 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+    }
+
+    .insight-card p {
+      margin: 0;
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+
+    .executive-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .action-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .action-card:hover {
+      border-color: #c0392b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-card .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .action-card h4 {
+      margin: 0;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🏛️ ASA Executive Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="topMgmtName">Top Management</p>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="top-management-dashboard.html" class="active">📊 Dashboard</a></li>
+      <li><a href="companies-functional.html">🏢 Companies</a></li>
+      <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+      <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+      <li><a href="stocks-functional.html">📈 Stocks</a></li>
+      <li><a href="transactions-functional.html">💰 Transactions</a></li>
+      <li><a href="trades-functional.html">🔄 Trades</a></li>
+      <li><a href="investors-functional.html">👤 Investors</a></li>
+      <li><a href="price-history-functional.html">📊 Price History</a></li>
+      <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+      <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+      <li><a href="#" class="logout" onclick="handleLogout()">🚪 Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="welcome-section">
+      <h1>Welcome back, <span id="welcomeName">Executive</span>!</h1>
+      <p>Strategic Overview & Executive Dashboard</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card red">
+        <h3>💰 Total Transaction Volume</h3>
+        <div class="value" id="totalVolume">$0</div>
+        <div class="change">All time transactions</div>
+      </div>
+
+      <div class="stat-card blue">
+        <h3>🏢 Listed Companies</h3>
+        <div class="value" id="totalCompanies">0</div>
+        <div class="change">Active companies</div>
+      </div>
+
+      <div class="stat-card green">
+        <h3>👤 Active Investors</h3>
+        <div class="value" id="totalInvestors">0</div>
+        <div class="change">Registered investors</div>
+      </div>
+
+      <div class="stat-card orange">
+        <h3>🔄 Today's Trades</h3>
+        <div class="value" id="todayTrades">0</div>
+        <div class="change">Executed today</div>
+      </div>
+    </div>
+
+    <div class="quick-insights">
+      <div class="insight-card success">
+        <h4>✅ Market Performance</h4>
+        <p>Overall market showing positive trends with steady growth across major sectors.</p>
+      </div>
+
+      <div class="insight-card warning">
+        <h4>⚠️ Compliance Review</h4>
+        <p id="auditInsight">Pending audit reports require attention.</p>
+      </div>
+
+      <div class="insight-card">
+        <h4>📊 Trading Activity</h4>
+        <p id="tradingInsight">Trading volume within normal parameters.</p>
+      </div>
+
+      <div class="insight-card danger" id="fraudInsight" style="display: none;">
+        <h4>🚨 Fraud Alerts</h4>
+        <p>Active fraud alerts detected. Immediate review recommended.</p>
+      </div>
+    </div>
+
+    <div class="executive-actions">
+      <div class="action-card" onclick="window.location.href='companies-functional.html'">
+        <div class="icon">🏢</div>
+        <h4>Manage Companies</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Strategic oversight</p>
+      </div>
+
+      <div class="action-card" onclick="window.location.href='institutions-functional.html'">
+        <div class="icon">🏛️</div>
+        <h4>Institutions</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Institutional management</p>
+      </div>
+
+      <div class="action-card" onclick="window.location.href='audit-reports-functional.html'">
+        <div class="icon">📋</div>
+        <h4>Audit Reports</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Compliance review</p>
+      </div>
+
+      <div class="action-card" onclick="window.location.href='fraud-alerts-functional.html'">
+        <div class="icon">⚠️</div>
+        <h4>Fraud Alerts</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Risk monitoring</p>
+      </div>
+
+      <div class="action-card" onclick="window.location.href='predictions-functional.html'">
+        <div class="icon">🔮</div>
+        <h4>Predictions</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Market forecasts</p>
+      </div>
+
+      <div class="action-card" onclick="window.location.href='transactions-functional.html'">
+        <div class="icon">💰</div>
+        <h4>Transactions</h4>
+        <p style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">Financial overview</p>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>📈 Trading Volume Trend</h3>
+        <canvas id="volumeChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h3>🏢 Company Distribution</h3>
+        <canvas id="companyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script>
+    // Check if top management is logged in
+    const userRole = sessionStorage.getItem('userRole');
+    const topMgmtName = sessionStorage.getItem('userFullName') || 'Executive';
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+
+    if (!isLoggedIn || userRole !== 'top-management') {
+      window.location.href = 'login.html';
+    }
+
+    // Display top management name
+    document.getElementById('topMgmtName').textContent = topMgmtName;
+    document.getElementById('welcomeName').textContent = topMgmtName;
+
+    // Load databases
+    const companiesDb = new LocalDatabase('companies');
+    const investorsDb = new LocalDatabase('investors');
+    const transactionsDb = new LocalDatabase('transactions');
+    const tradesDb = new LocalDatabase('trades');
+    const auditReportsDb = new LocalDatabase('audit_reports');
+    const fraudAlertsDb = new LocalDatabase('fraud_alerts');
+
+    function loadDashboardData() {
+      const companies = companiesDb.getAll();
+      const investors = investorsDb.getAll();
+      const transactions = transactionsDb.getAll();
+      const trades = tradesDb.getAll();
+      const auditReports = auditReportsDb.getAll();
+      const fraudAlerts = fraudAlertsDb.getAll();
+
+      // Update stats
+      document.getElementById('totalCompanies').textContent = companies.length;
+      document.getElementById('totalInvestors').textContent = investors.length;
+
+      // Calculate total transaction volume
+      const totalVolume = transactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+      document.getElementById('totalVolume').textContent = '$' + totalVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // Count today's trades
+      const today = new Date().toISOString().split('T')[0];
+      const todayTrades = trades.filter(trade => {
+        const tradeDate = new Date(trade.trade_date).toISOString().split('T')[0];
+        return tradeDate === today;
+      }).length;
+      document.getElementById('todayTrades').textContent = todayTrades;
+
+      // Update insights
+      const pendingAudits = auditReports.filter(a => a.status === 'Pending').length;
+      if (pendingAudits > 0) {
+        document.getElementById('auditInsight').textContent = `${pendingAudits} pending audit reports require attention.`;
+      }
+
+      const activeFraudAlerts = fraudAlerts.filter(f => f.status === 'Active').length;
+      if (activeFraudAlerts > 0) {
+        document.getElementById('fraudInsight').style.display = 'block';
+      }
+
+      document.getElementById('tradingInsight').textContent = `${trades.length} total trades executed. ${todayTrades} today.`;
+
+      // Load charts
+      loadVolumeChart(trades);
+      loadCompanyChart(companies);
+    }
+
+    function loadVolumeChart(trades) {
+      const ctx = document.getElementById('volumeChart').getContext('2d');
+
+      // Group trades by date
+      const tradeDates = {};
+      trades.forEach(trade => {
+        const date = new Date(trade.trade_date).toLocaleDateString();
+        tradeDates[date] = (tradeDates[date] || 0) + parseFloat(trade.total_amount || 0);
+      });
+
+      const dates = Object.keys(tradeDates).slice(-7);
+      const volumes = dates.map(date => tradeDates[date]);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Trading Volume ($)',
+            data: volumes,
+            borderColor: '#3498db',
+            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          }
+        }
+      });
+    }
+
+    function loadCompanyChart(companies) {
+      const ctx = document.getElementById('companyChart').getContext('2d');
+
+      // Group by sector
+      const sectors = {};
+      companies.forEach(company => {
+        const sector = company.sector || 'Other';
+        sectors[sector] = (sectors[sector] || 0) + 1;
+      });
+
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(sectors),
+          datasets: [{
+            data: Object.values(sectors),
+            backgroundColor: [
+              '#3498db',
+              '#27ae60',
+              '#f39c12',
+              '#e74c3c',
+              '#9b59b6',
+              '#16a085'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true
+        }
+      });
+    }
+
+    function handleLogout() {
+      sessionStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    // Load data on page load
+    loadDashboardData();
+  </script>
+</body>
+
+</html>

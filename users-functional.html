@@ -44,6 +44,21 @@
             color: white;
         }
 
+        .role-market {
+            background: #8e44ad;
+            color: white;
+        }
+
+        .role-top {
+            background: #c0392b;
+            color: white;
+        }
+
+        .role-board {
+            background: #2c3e50;
+            color: white;
+        }
+
         .role-viewer {
             background: #95a5a6;
             color: white;
@@ -253,6 +268,9 @@
                             <option value="Auditor">Auditor</option>
                             <option value="Stock Team">Stock Management Team</option>
                             <option value="Trade Team">Trade Management Team</option>
+                            <option value="Market Data">Market Data Provider</option>
+                            <option value="Top Management">Top Management</option>
+                            <option value="Board Directors">Board of Directors</option>
                             <option value="Viewer">Viewer</option>
                         </select>
                     </div>
@@ -389,7 +407,10 @@
             const roleMap = {
                 'Analyst': 'Data Analyst',
                 'Stock Team': 'Stock Management Team',
-                'Trade Team': 'Trade Management Team'
+                'Trade Team': 'Trade Management Team',
+                'Market Data': 'Market Data Provider',
+                'Top Management': 'Top Management',
+                'Board Directors': 'Board of Directors'
             };
             return roleMap[role] || role;
         }
