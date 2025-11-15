@@ -36,6 +36,16 @@ function handleLogin(event) {
         return;
     }
     
+    if (username === 'analyst' && password === 'analyst123') {
+        // Data Analyst login
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', 'analyst');
+        sessionStorage.setItem('userRole', 'analyst');
+        sessionStorage.setItem('userFullName', 'Demo Data Analyst');
+        window.location.href = 'analyst-dashboard.html';
+        return;
+    }
+    
     // If not demo credentials, check database
     const usersDb = JSON.parse(localStorage.getItem('users') || '[]');
     const user = usersDb.find(u => u.username === username && u.password === password);
@@ -69,6 +79,8 @@ window.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'investor-dashboard.html';
         } else if (role === 'auditor') {
             window.location.href = 'auditor-dashboard.html';
+        } else if (role === 'analyst') {
+            window.location.href = 'analyst-dashboard.html';
         } else {
             window.location.href = 'dashboard-asa.html';
         }

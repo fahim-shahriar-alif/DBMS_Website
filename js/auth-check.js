@@ -18,6 +18,7 @@ function checkAuth() {
         isAdmin: userRole === 'admin',
         isInvestor: userRole === 'investor',
         isAuditor: userRole === 'auditor',
+        isAnalyst: userRole === 'analyst',
         username: sessionStorage.getItem('username'),
         fullName: sessionStorage.getItem('userFullName'),
         investorId: sessionStorage.getItem('investorId')
@@ -71,6 +72,11 @@ function applyInvestorReadOnlyMode() {
     if (auth && auth.isAuditor) {
         // Apply auditor-specific controls
         applyAuditorMode();
+    }
+    
+    if (auth && auth.isAnalyst) {
+        // Apply analyst-specific controls
+        applyAnalystMode();
     }
 }
 
@@ -179,6 +185,84 @@ function updateAuditorNavigation() {
     }
 }
 
+// Apply analyst mode
+function applyAnalystMode() {
+    const currentPage = window.location.pathname.split('/').pop();
+    
+    // Pages where analyst has full edit access
+    const fullAccessPages = ['predictions-functional.html', 'price-history-functional.html', 'fraud-alerts-functional.html'];
+    
+    // If not on full access page, make it read-only
+    if (!fullAccessPages.includes(currentPage)) {
+        // Hide add, edit, remove buttons on read-only pages
+        const addButtons = document.querySelectorAll('.btn-add, .btn-edit, .btn-remove');
+        addButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        // Hide checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.style.display = 'none';
+        });
+        
+        // Hide action buttons in tables
+        const actionButtons = document.querySelectorAll('.action-buttons-inline');
+        actionButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        // Add "(View Only)" to page title
+        const pageHeader = document.querySelector('.page-header h1');
+        if (pageHeader && !pageHeader.textContent.includes('(View Only)')) {
+            pageHeader.textContent += ' (View Only)';
+        }
+    }
+    
+    // Update navbar branding
+    const navBrand = document.querySelector('.nav-brand h2');
+    if (navBrand) {
+        navBrand.textContent = '🏛️ ASA Analytics Portal';
+    }
+    
+    const navSubtitle = document.querySelector('.nav-brand p');
+    if (navSubtitle) {
+        const auth = checkAuth();
+        navSubtitle.textContent = auth.fullName;
+    }
+    
+    // Update navigation menu for analyst
+    updateAnalystNavigation();
+}
+
+// Update navigation menu for analyst portal
+function updateAnalystNavigation() {
+    const navMenu = document.querySelector('.nav-menu');
+    if (navMenu) {
+        navMenu.innerHTML = `
+            <li><a href="analyst-dashboard.html">📊 Dashboard</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="stocks-functional.html">📈 Stocks</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        `;
+        
+        // Highlight active page
+        const currentPage = window.location.pathname.split('/').pop();
+        const links = navMenu.querySelectorAll('a');
+        links.forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            }
+        });
+    }
+}
+
 // Logout function for investor
 function handleInvestorLogout() {
     sessionStorage.clear();
@@ -194,6 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
             applyInvestorReadOnlyMode();
         } else if (auth && auth.isAuditor) {
             applyAuditorMode();
+        } else if (auth && auth.isAnalyst) {
+            applyAnalystMode();
         }
     }, 100);
 });
