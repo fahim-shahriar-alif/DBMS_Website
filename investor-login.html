@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investor Login - ASA Data Server</title>
+  <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="login-header">
+        <h1>🏛️ ASA Data Server</h1>
+        <p>Investor Portal</p>
+        <p style="font-size: 12px; margin-top: 5px; opacity: 0.8;">Access Your Investment Portfolio</p>
+      </div>
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="investor_id">Investor ID</label>
+          <input type="text" id="investor_id" name="investor_id" required
+            placeholder="Enter your Investor ID (e.g., 20001)">
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="Enter your email">
+        </div>
+        <button type="submit" class="login-btn">Login</button>
+      </form>
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="login.html" style="color: #667eea; text-decoration: none; font-size: 14px;">← Back to Admin Login</a>
+      </div>
+    </div>
+  </div>
+  <script src="js/local-database.js"></script>
+  <script>
+    function handleLogin(event) {
+      event.preventDefault();
+
+      const investorId = document.getElementById('investor_id').value;
+      const email = document.getElementById('email').value;
+
+      // Get investors from database
+      const investorsDb = new LocalDatabase('investors');
+      const investors = investorsDb.getAll();
+
+      // Find investor by ID and email
+      const investor = investors.find(inv =>
+        inv.id == investorId && inv.email.toLowerCase() === email.toLowerCase()
+      );
+
+      if (investor) {
+        // Store investor session
+        sessionStorage.setItem('userRole', 'investor');
+        sessionStorage.setItem('investorId', investor.id);
+        sessionStorage.setItem('investorName', investor.name);
+        sessionStorage.setItem('investorEmail', investor.email);
+        sessionStorage.setItem('isLoggedIn', 'true');
+
+        // Redirect to investor dashboard
+        window.location.href = 'investor-dashboard.html';
+      } else {
+        alert('Invalid Investor ID or Email. Please try again.');
+      }
+    }
+  </script>
+</body>
+
+</html>

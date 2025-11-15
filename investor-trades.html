@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Trades - ASA Investor Portal</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/table.css">
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🏛️ ASA Investor Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="investorName">Investor</p>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="investor-dashboard.html">📊 Dashboard</a></li>
+      <li><a href="stocks-functional.html">📈 Stocks</a></li>
+      <li><a href="companies-functional.html">🏢 Companies</a></li>
+      <li><a href="price-history-functional.html">📊 Price History</a></li>
+      <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+      <li><a href="investor-transactions.html">💰 My Transactions</a></li>
+      <li><a href="investor-trades.html" class="active">🔄 My Trades</a></li>
+      <li><a href="investor-profile.html">👤 My Profile</a></li>
+      <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1>🔄 My Trades</h1>
+      <p>View your trading activity</p>
+    </div>
+
+    <div class="table-controls">
+      <div class="search-box">
+        <input type="text" placeholder="Search trades..." id="searchInput">
+        <button class="btn-search" onclick="handleSearch()">Search</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Trade ID</th>
+            <th>Role</th>
+            <th>Counterparty</th>
+            <th>Stock ID</th>
+            <th>Shares</th>
+            <th>Trade Price</th>
+            <th>Trade Amount</th>
+            <th>Settlement Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px;">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script>
+    // Check authentication
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    const userRole = sessionStorage.getItem('userRole');
+    const investorId = sessionStorage.getItem('investorId') || '20001';
+    const investorName = sessionStorage.getItem('userFullName') || 'Demo Investor';
+
+    if (!isLoggedIn || userRole !== 'investor') {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('investorName').textContent = investorName;
+
+    const db = new LocalDatabase('trades');
+
+    function loadTrades() {
+      const allTrades = db.getAll();
+      const myTrades = allTrades.filter(t => t.buyer == investorId || t.seller == investorId);
+      renderTable(myTrades);
+    }
+
+    function renderTable(trades) {
+      const tbody = document.getElementById('tableBody');
+
+      if (trades.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No trades found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = trades.map(trade => {
+        const isBuyer = trade.buyer == investorId;
+        const role = isBuyer ? 'Buyer' : 'Seller';
+        const counterparty = isBuyer ? trade.seller_name : trade.buyer_name;
+
+        return `
+                <tr>
+                    <td>${trade.id}</td>
+                    <td><span class="badge" style="background: ${isBuyer ? '#28a745' : '#dc3545'}; color: white;">${role}</span></td>
+                    <td>${counterparty}</td>
+                    <td>${trade.stock_id}</td>
+                    <td>${parseInt(trade.shares).toLocaleString()}</td>
+                    <td>$${parseFloat(trade.trade_price).toFixed(2)}</td>
+                    <td><strong>$${parseFloat(trade.trade_amount).toFixed(2)}</strong></td>
+                    <td>${trade.settlement_date || '-'}</td>
+                    <td><span class="badge badge-${trade.status.toLowerCase()}">${trade.status}</span></td>
+                </tr>
+                `;
+      }).join('');
+    }
+
+    function handleSearch() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const allTrades = db.getAll();
+      const myTrades = allTrades.filter(t => t.buyer == investorId || t.seller == investorId);
+
+      if (query.trim() === '') {
+        renderTable(myTrades);
+      } else {
+        const filtered = myTrades.filter(t =>
+          JSON.stringify(t).toLowerCase().includes(query)
+        );
+        renderTable(filtered);
+      }
+    }
+
+    function handleLogout() {
+      sessionStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleSearch();
+      }
+    });
+
+    loadTrades();
+  </script>
+</body>
+
+</html>

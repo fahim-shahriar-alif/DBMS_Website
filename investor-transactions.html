@@ -4,22 +4,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Transactions - Investor Portal</title>
+  <title>My Transactions - ASA Investor Portal</title>
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/table.css">
+  <link rel="stylesheet" href="css/modal.css">
 </head>
 
 <body>
   <nav class="navbar">
     <div class="nav-brand">
-      <h2>👤 Investor Portal</h2>
-      <p style="font-size: 12px; margin: 0; color: #ddd;" id="investorName">Welcome, Investor</p>
+      <h2>🏛️ ASA Investor Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="investorName">Investor</p>
     </div>
     <ul class="nav-menu">
-      <li><a href="dashboard-investor.html">📊 Dashboard</a></li>
-      <li><a href="investor-portfolio.html">💼 My Portfolio</a></li>
+      <li><a href="investor-dashboard.html">📊 Dashboard</a></li>
+      <li><a href="stocks-functional.html">📈 Stocks</a></li>
+      <li><a href="companies-functional.html">🏢 Companies</a></li>
+      <li><a href="price-history-functional.html">📊 Price History</a></li>
+      <li><a href="predictions-functional.html">🔮 Predictions</a></li>
       <li><a href="investor-transactions.html" class="active">💰 My Transactions</a></li>
-      <li><a href="investor-stocks.html">📈 Browse Stocks</a></li>
+      <li><a href="investor-trades.html">🔄 My Trades</a></li>
+      <li><a href="investor-profile.html">👤 My Profile</a></li>
       <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
     </ul>
   </nav>
@@ -27,37 +32,16 @@
   <div class="main-content">
     <div class="page-header">
       <h1>💰 My Transactions</h1>
-      <p>View your transaction history and pending requests</p>
+      <p>View and manage your stock transactions</p>
     </div>
 
-    <div class="stats-grid" style="margin-bottom: 30px;">
-      <div class="stat-card">
-        <div class="stat-icon blue">💰</div>
-        <div class="stat-info">
-          <h3>Total Transactions</h3>
-          <p class="stat-number" id="totalTransactions">0</p>
-        </div>
+    <div class="table-controls">
+      <div class="search-box">
+        <input type="text" placeholder="Search transactions..." id="searchInput">
+        <button class="btn-search" onclick="handleSearch()">Search</button>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon green">✅</div>
-        <div class="stat-info">
-          <h3>Completed</h3>
-          <p class="stat-number" id="completedTransactions">0</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon orange">⏳</div>
-        <div class="stat-info">
-          <h3>Pending</h3>
-          <p class="stat-number" id="pendingTransactions">0</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon purple">💵</div>
-        <div class="stat-info">
-          <h3>Total Volume</h3>
-          <p class="stat-number" id="totalVolume">$0</p>
-        </div>
+      <div class="action-buttons">
+        <button class="btn-add" onclick="openAddModal()">+ New Transaction</button>
       </div>
     </div>
 
@@ -66,110 +50,181 @@
         <thead>
           <tr>
             <th>Transaction ID</th>
-            <th>Date</th>
             <th>Type</th>
-            <th>Stock</th>
-            <th>Company</th>
-            <th>Quantity</th>
-            <th>Price/Share</th>
+            <th>Investor Name</th>
+            <th>Shares</th>
+            <th>Price per Share</th>
             <th>Total Amount</th>
-            <th>Status</th>
+            <th>Transaction Date</th>
           </tr>
         </thead>
         <tbody id="tableBody">
           <tr>
-            <td colspan="9" style="text-align: center; padding: 40px;">Loading transactions...</td>
+            <td colspan="7" style="text-align: center; padding: 40px;">Loading...</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 
+  <!-- Add Transaction Modal -->
+  <div id="transactionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">New Transaction</h2>
+        <span class="close" onclick="closeModal('transactionModal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="transactionForm">
+          <div class="form-group">
+            <label for="transaction_type">Type *</label>
+            <select id="transaction_type" required>
+              <option value="BUY">BUY</option>
+              <option value="SELL">SELL</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="shares">Shares *</label>
+            <input type="number" id="shares" required min="1" oninput="calculateTotal()">
+          </div>
+
+          <div class="form-group">
+            <label for="price_per_share">Price per Share *</label>
+            <input type="number" id="price_per_share" required step="0.01" min="0" oninput="calculateTotal()">
+          </div>
+
+          <div class="form-group">
+            <label for="total_amount">Total Amount</label>
+            <input type="number" id="total_amount" step="0.01" readonly style="background: #f5f5f5;">
+          </div>
+
+          <div class="form-group">
+            <label for="transaction_date">Transaction Date *</label>
+            <input type="date" id="transaction_date" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('transactionModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="handleSave()">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/local-database.js"></script>
-  <script src="js/logout.js"></script>
   <script>
-    // Check if user is logged in and has Investor role
-    window.addEventListener('DOMContentLoaded', () => {
-      const isLoggedIn = localStorage.getItem('isLoggedIn');
-      const userRole = localStorage.getItem('userRole');
-      const userFullName = localStorage.getItem('userFullName');
+    // Check authentication
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    const userRole = sessionStorage.getItem('userRole');
+    const investorId = sessionStorage.getItem('investorId') || '20001';
+    const investorName = sessionStorage.getItem('userFullName') || 'Demo Investor';
 
-      if (!isLoggedIn || userRole !== 'Investor') {
-        window.location.href = 'login.html';
-        return;
-      }
+    if (!isLoggedIn || userRole !== 'investor') {
+      window.location.href = 'login.html';
+    }
 
-      // Display investor name
-      document.getElementById('investorName').textContent = `Welcome, ${userFullName}`;
+    document.getElementById('investorName').textContent = investorName;
 
-      // Load transactions
-      loadTransactions();
-    });
+    const db = new LocalDatabase('transactions');
 
     function loadTransactions() {
-      const userId = localStorage.getItem('userId');
-      const transactionsDb = new LocalDatabase('stock_transactions');
-      const stocksDb = new LocalDatabase('stocks');
-      const companiesDb = new LocalDatabase('companies');
-
-      // Get only this investor's transactions
-      const transactions = transactionsDb.getAll()
-        .filter(tx => tx.investor_id == userId)
-        .sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date));
-
-      // Update stats
-      updateStats(transactions);
-
-      // Render table
-      renderTable(transactions, stocksDb, companiesDb);
+      const allTransactions = db.getAll();
+      const myTransactions = allTransactions.filter(t => t.investor_id == investorId);
+      renderTable(myTransactions);
     }
 
-    function updateStats(transactions) {
-      const totalTransactions = transactions.length;
-      const completedTransactions = transactions.filter(tx => tx.status === 'Completed').length;
-      const pendingTransactions = transactions.filter(tx => tx.status === 'Pending').length;
-      const totalVolume = transactions.reduce((sum, tx) => sum + parseFloat(tx.total_amount || 0), 0);
-
-      document.getElementById('totalTransactions').textContent = totalTransactions;
-      document.getElementById('completedTransactions').textContent = completedTransactions;
-      document.getElementById('pendingTransactions').textContent = pendingTransactions;
-      document.getElementById('totalVolume').textContent = '$' + totalVolume.toLocaleString();
-    }
-
-    function renderTable(transactions, stocksDb, companiesDb) {
+    function renderTable(transactions) {
       const tbody = document.getElementById('tableBody');
 
       if (transactions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No transactions found. Submit a Buy/Sell request from the Dashboard.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No transactions found</td></tr>';
         return;
       }
 
-      tbody.innerHTML = transactions.map(tx => {
-        const stock = stocksDb.getById(tx.stock_id);
-        const company = companiesDb.getById(tx.company_id);
-
-        const stockSymbol = stock ? stock.symbol : 'Unknown';
-        const companyName = company ? company.company_name : 'Unknown Company';
-
-        const typeClass = tx.transaction_type === 'Buy' ? 'badge-success' : 'badge-warning';
-        const statusClass = tx.status === 'Completed' ? 'badge-success' :
-          tx.status === 'Pending' ? 'badge-warning' : 'badge-danger';
-
-        return `
-                    <tr>
-                        <td>TX-${tx.id}</td>
-                        <td>${new Date(tx.transaction_date).toLocaleDateString()}</td>
-                        <td><span class="badge ${typeClass}">${tx.transaction_type}</span></td>
-                        <td><strong>${stockSymbol}</strong></td>
-                        <td>${companyName}</td>
-                        <td>${parseInt(tx.quantity).toLocaleString()}</td>
-                        <td>$${parseFloat(tx.price_per_share).toFixed(2)}</td>
-                        <td><strong>$${parseFloat(tx.total_amount).toLocaleString()}</strong></td>
-                        <td><span class="badge ${statusClass}">${tx.status}</span></td>
-                    </tr>
-                `;
-      }).join('');
+      tbody.innerHTML = transactions.map(tx => `
+                <tr>
+                    <td>${tx.id}</td>
+                    <td><span class="badge" style="background: ${tx.transaction_type === 'BUY' ? '#28a745' : '#dc3545'}; color: white;">${tx.transaction_type}</span></td>
+                    <td>${tx.investor_name}</td>
+                    <td>${parseInt(tx.shares).toLocaleString()}</td>
+                    <td>$${parseFloat(tx.price_per_share).toFixed(2)}</td>
+                    <td><strong>$${parseFloat(tx.total_amount).toFixed(2)}</strong></td>
+                    <td>${tx.transaction_date || '-'}</td>
+                </tr>
+            `).join('');
     }
+
+    function handleSearch() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const allTransactions = db.getAll();
+      const myTransactions = allTransactions.filter(t => t.investor_id == investorId);
+
+      if (query.trim() === '') {
+        renderTable(myTransactions);
+      } else {
+        const filtered = myTransactions.filter(t =>
+          JSON.stringify(t).toLowerCase().includes(query)
+        );
+        renderTable(filtered);
+      }
+    }
+
+    function calculateTotal() {
+      const shares = parseFloat(document.getElementById('shares').value) || 0;
+      const price = parseFloat(document.getElementById('price_per_share').value) || 0;
+      document.getElementById('total_amount').value = (shares * price).toFixed(2);
+    }
+
+    function openAddModal() {
+      document.getElementById('transactionForm').reset();
+      document.getElementById('transaction_date').value = new Date().toISOString().split('T')[0];
+      openModal('transactionModal');
+    }
+
+    function handleSave() {
+      const data = {
+        transaction_type: document.getElementById('transaction_type').value,
+        investor_id: investorId,
+        investor_name: investorName,
+        shares: document.getElementById('shares').value,
+        price_per_share: document.getElementById('price_per_share').value,
+        total_amount: document.getElementById('total_amount').value,
+        transaction_date: document.getElementById('transaction_date').value
+      };
+
+      db.add(data);
+      alert('Transaction added successfully!');
+      closeModal('transactionModal');
+      loadTransactions();
+    }
+
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    function handleLogout() {
+      sessionStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    window.onclick = function (event) {
+      if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleSearch();
+      }
+    });
+
+    loadTransactions();
   </script>
 </body>
 

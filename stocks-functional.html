@@ -2,161 +2,162 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stocks - ASA Data Server</title>
-  <link rel="stylesheet" href="css/dashboard.css">
-  <link rel="stylesheet" href="css/table.css">
-  <link rel="stylesheet" href="css/modal.css">
-  <style>
-    .action-buttons-inline {
-      display: flex;
-      gap: 5px;
-      justify-content: center;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stocks - ASA Data Server</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <style>
+        .action-buttons-inline {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
 
-    .btn-small {
-      padding: 5px 8px;
-      font-size: 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-    .btn-edit {
-      background: #3498db;
-      color: white;
-    }
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
 
-    .btn-edit:hover {
-      background: #2980b9;
-    }
+        .btn-edit:hover {
+            background: #2980b9;
+        }
 
-    .btn-delete {
-      background: #e74c3c;
-      color: white;
-    }
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
 
-    .btn-delete:hover {
-      background: #c0392b;
-    }
-  </style>
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+    </style>
 </head>
 
 <body>
-  <nav class="navbar">
-    <div class="nav-brand">
-      <h2>🏛️ ASA Data Server</h2>
-      <p style="font-size: 12px; margin: 0; color: #ddd;">Association for Social Advancement</p>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏛️ ASA Data Server</h2>
+            <p style="font-size: 12px; margin: 0; color: #ddd;">Association for Social Advancement</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
+            <li><a href="companies-functional.html">🏢 Companies</a></li>
+            <li><a href="investors-functional.html">👤 Investors</a></li>
+            <li><a href="stocks-functional.html" class="active">📈 Stocks</a></li>
+            <li><a href="transactions-functional.html">💰 Transactions</a></li>
+            <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
+            <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
+            <li><a href="trades-functional.html">🔄 Trades</a></li>
+            <li><a href="users-functional.html">👥 Users</a></li>
+            <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
+            <li><a href="price-history-functional.html">📊 Price History</a></li>
+            <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+            <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📈 Stocks Management</h1>
+            <p>Manage stock listings, prices, and market data</p>
+        </div>
+
+        <div class="table-controls">
+            <div class="search-box">
+                <input type="text" placeholder="Search stocks..." id="searchInput">
+                <button class="btn-search" onclick="handleSearch()">Search</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-add" onclick="openAddModal()">+ Add</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Stock ID</th>
+                        <th>Company ID</th>
+                        <th>Company Name</th>
+                        <th>Current Price</th>
+                        <th>Total Shares</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-    <ul class="nav-menu">
-      <li><a href="dashboard-asa.html">📊 Dashboard</a></li>
-      <li><a href="companies-functional.html">🏢 Companies</a></li>
-      <li><a href="investors-functional.html">👤 Investors</a></li>
-      <li><a href="stocks-functional.html" class="active">📈 Stocks</a></li>
-      <li><a href="transactions-functional.html">💰 Transactions</a></li>
-      <li><a href="audit-reports-functional.html">📋 Audit Reports</a></li>
-      <li><a href="institutions-functional.html">🏛️ Institutions</a></li>
-      <li><a href="trades-functional.html">🔄 Trades</a></li>
-      <li><a href="users-functional.html">👥 Users</a></li>
-      <li><a href="fraud-alerts-functional.html">⚠️ Fraud Alerts</a></li>
-      <li><a href="price-history-functional.html">📊 Price History</a></li>
-      <li><a href="predictions-functional.html">🔮 Predictions</a></li>
-      <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
-    </ul>
-  </nav>
 
-  <div class="main-content">
-    <div class="page-header">
-      <h1>📈 Stocks Management</h1>
-      <p>Manage stock listings, prices, and market data</p>
+    <!-- Add/Edit Modal -->
+    <div id="stockModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Stock</h2>
+                <span class="close" onclick="closeModal('stockModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="stockForm">
+                    <input type="hidden" id="stock_id">
+
+                    <div class="form-group">
+                        <label for="company_id">Company ID *</label>
+                        <select id="company_id" required onchange="updateCompanyName()">
+                            <option value="">Select Company</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="company_name">Company Name</label>
+                        <input type="text" id="company_name" readonly style="background: #f5f5f5;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="current_price">Current Price ($) *</label>
+                        <input type="number" id="current_price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="total_shares">Total Shares *</label>
+                        <input type="number" id="total_shares" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status *</label>
+                        <select id="status" required>
+                            <option value="Available">Available</option>
+                            <option value="Not Available">Not Available</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('stockModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="handleSave()">Save</button>
+            </div>
+        </div>
     </div>
 
-    <div class="table-controls">
-      <div class="search-box">
-        <input type="text" placeholder="Search stocks..." id="searchInput">
-        <button class="btn-search" onclick="handleSearch()">Search</button>
-      </div>
-      <div class="action-buttons">
-        <button class="btn-add" onclick="openAddModal()">+ Add</button>
-      </div>
-    </div>
-
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Stock ID</th>
-            <th>Company ID</th>
-            <th>Company Name</th>
-            <th>Current Price</th>
-            <th>Total Shares</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr>
-            <td colspan="7" style="text-align: center; padding: 40px;">Loading...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Add/Edit Modal -->
-  <div id="stockModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modalTitle">Add Stock</h2>
-        <span class="close" onclick="closeModal('stockModal')">&times;</span>
-      </div>
-      <div class="modal-body">
-        <form id="stockForm">
-          <input type="hidden" id="stock_id">
-
-          <div class="form-group">
-            <label for="company_id">Company ID *</label>
-            <select id="company_id" required onchange="updateCompanyName()">
-              <option value="">Select Company</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="company_name">Company Name</label>
-            <input type="text" id="company_name" readonly style="background: #f5f5f5;">
-          </div>
-
-          <div class="form-group">
-            <label for="current_price">Current Price ($) *</label>
-            <input type="number" id="current_price" step="0.01" min="0" required>
-          </div>
-
-          <div class="form-group">
-            <label for="total_shares">Total Shares *</label>
-            <input type="number" id="total_shares" min="0" required>
-          </div>
-
-          <div class="form-group">
-            <label for="status">Status *</label>
-            <select id="status" required>
-              <option value="Available">Available</option>
-              <option value="Not Available">Not Available</option>
-            </select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('stockModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="handleSave()">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/local-database.js"></script>
-  <script src="js/logout.js"></script>
-  <script>
+    <script src="js/local-database.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/logout.js"></script>
+    <script>
     const db = new LocalDatabase('stocks');
     const companiesDb = new LocalDatabase('companies');
     let isEditMode = false;
@@ -307,7 +308,7 @@
         handleSearch();
       }
     });
-  </script>
+    </script>
 </body>
 
 </html>

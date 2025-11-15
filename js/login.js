@@ -4,42 +4,45 @@ function handleLogin(event) {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     
-    // Get users from database
-    const usersDb = JSON.parse(localStorage.getItem('users') || '[]');
+    // Demo credentials
+    if (username === 'admin' && password === 'admin123') {
+        // Admin login
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', 'admin');
+        sessionStorage.setItem('userRole', 'admin');
+        sessionStorage.setItem('userFullName', 'Administrator');
+        window.location.href = 'dashboard-asa.html';
+        return;
+    }
     
-    // Find user with matching credentials
+    if (username === 'investor' && password === 'investor123') {
+        // Investor login
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', 'investor');
+        sessionStorage.setItem('userRole', 'investor');
+        sessionStorage.setItem('userFullName', 'Demo Investor');
+        sessionStorage.setItem('investorId', '20001'); // Demo investor ID
+        window.location.href = 'investor-dashboard.html';
+        return;
+    }
+    
+    // If not demo credentials, check database
+    const usersDb = JSON.parse(localStorage.getItem('users') || '[]');
     const user = usersDb.find(u => u.username === username && u.password === password);
     
     if (user) {
         // Store login state with role information
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('username', user.username);
-        localStorage.setItem('userRole', user.role);
-        localStorage.setItem('userId', user.id);
-        localStorage.setItem('userFullName', user.full_name);
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('username', user.username);
+        sessionStorage.setItem('userRole', user.role);
+        sessionStorage.setItem('userId', user.id);
+        sessionStorage.setItem('userFullName', user.full_name);
         
         // Redirect based on role
-        switch(user.role) {
-            case 'Admin':
-                window.location.href = 'dashboard-asa.html';
-                break;
-            case 'Investor':
-                window.location.href = 'dashboard-investor.html';
-                break;
-            case 'Manager':
-                window.location.href = 'dashboard-manager.html';
-                break;
-            case 'Stock Manager':
-                window.location.href = 'dashboard-stock-manager.html';
-                break;
-            case 'Auditor':
-                window.location.href = 'dashboard-auditor.html';
-                break;
-            case 'Analyst':
-                window.location.href = 'dashboard-analyst.html';
-                break;
-            default:
-                window.location.href = 'dashboard-asa.html';
+        if (user.role === 'Investor') {
+            window.location.href = 'investor-dashboard.html';
+        } else {
+            window.location.href = 'dashboard-asa.html';
         }
     } else {
         alert('Invalid username or password');
@@ -48,31 +51,14 @@ function handleLogin(event) {
 
 // Check if already logged in
 window.addEventListener('DOMContentLoaded', () => {
-    if (localStorage.getItem('isLoggedIn') === 'true') {
-        const role = localStorage.getItem('userRole');
+    if (sessionStorage.getItem('isLoggedIn') === 'true') {
+        const role = sessionStorage.getItem('userRole');
         
         // Redirect based on role
-        switch(role) {
-            case 'Admin':
-                window.location.href = 'dashboard-asa.html';
-                break;
-            case 'Investor':
-                window.location.href = 'dashboard-investor.html';
-                break;
-            case 'Manager':
-                window.location.href = 'dashboard-manager.html';
-                break;
-            case 'Stock Manager':
-                window.location.href = 'dashboard-stock-manager.html';
-                break;
-            case 'Auditor':
-                window.location.href = 'dashboard-auditor.html';
-                break;
-            case 'Analyst':
-                window.location.href = 'dashboard-analyst.html';
-                break;
-            default:
-                window.location.href = 'dashboard-asa.html';
+        if (role === 'investor') {
+            window.location.href = 'investor-dashboard.html';
+        } else {
+            window.location.href = 'dashboard-asa.html';
         }
     }
 });

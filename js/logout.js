@@ -1,5 +1,6 @@
 function handleLogout() {
-    // Clear login state
+    // Clear login state from both storage types
+    sessionStorage.clear();
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('username');
     
@@ -14,8 +15,12 @@ window.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
-    // If not logged in, redirect to login page
-    if (localStorage.getItem('isLoggedIn') !== 'true') {
+    // Check both sessionStorage (new) and localStorage (old) for compatibility
+    const isLoggedInSession = sessionStorage.getItem('isLoggedIn') === 'true';
+    const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
+    
+    // If not logged in either way, redirect to login page
+    if (!isLoggedInSession && !isLoggedInLocal) {
         window.location.href = 'login.html';
     }
 });

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile - ASA Investor Portal</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/table.css">
+  <style>
+    .profile-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: white;
+      margin: 0 auto 15px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-group input[readonly] {
+      background: #f5f5f5;
+      cursor: not-allowed;
+    }
+
+    .btn-save {
+      background: #667eea;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .btn-save:hover {
+      background: #5a6fd8;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🏛️ ASA Investor Portal</h2>
+      <p style="font-size: 12px; margin: 0; color: #ddd;" id="investorName">Investor</p>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="investor-dashboard.html">📊 Dashboard</a></li>
+      <li><a href="stocks-functional.html">📈 Stocks</a></li>
+      <li><a href="companies-functional.html">🏢 Companies</a></li>
+      <li><a href="price-history-functional.html">📊 Price History</a></li>
+      <li><a href="predictions-functional.html">🔮 Predictions</a></li>
+      <li><a href="investor-transactions.html">💰 My Transactions</a></li>
+      <li><a href="investor-trades.html">🔄 My Trades</a></li>
+      <li><a href="investor-profile.html" class="active">👤 My Profile</a></li>
+      <li><a href="#" class="logout" onclick="handleLogout(); return false;">🚪 Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1>👤 My Profile</h1>
+      <p>Manage your investor information</p>
+    </div>
+
+    <div class="profile-container">
+      <div class="profile-header">
+        <div class="profile-avatar">👤</div>
+        <h2 id="profileName">Demo Investor</h2>
+        <p style="color: #666;">Investor ID: <span id="profileId">20001</span></p>
+      </div>
+
+      <form id="profileForm">
+        <div class="form-group">
+          <label for="investor_id">Investor ID</label>
+          <input type="text" id="investor_id" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="name">Name *</label>
+          <input type="text" id="name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="account_type">Account Type</label>
+          <input type="text" id="account_type" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone</label>
+          <input type="tel" id="phone">
+        </div>
+
+        <div class="form-group">
+          <label for="registration_date">Registration Date</label>
+          <input type="date" id="registration_date" readonly>
+        </div>
+
+        <button type="submit" class="btn-save">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/local-database.js"></script>
+  <script>
+    // Check authentication
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    const userRole = sessionStorage.getItem('userRole');
+    const investorId = sessionStorage.getItem('investorId') || '20001';
+    const investorName = sessionStorage.getItem('userFullName') || 'Demo Investor';
+
+    if (!isLoggedIn || userRole !== 'investor') {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('investorName').textContent = investorName;
+
+    const db = new LocalDatabase('investors');
+
+    function loadProfile() {
+      const investor = db.getById(investorId);
+
+      if (investor) {
+        document.getElementById('investor_id').value = investor.id;
+        document.getElementById('name').value = investor.name;
+        document.getElementById('account_type').value = investor.account_type || 'Individual';
+        document.getElementById('email').value = investor.email || '';
+        document.getElementById('phone').value = investor.phone || '';
+        document.getElementById('registration_date').value = investor.registration_date || '';
+
+        document.getElementById('profileName').textContent = investor.name;
+        document.getElementById('profileId').textContent = investor.id;
+      } else {
+        // Create demo investor profile if doesn't exist
+        const demoInvestor = {
+          id: investorId,
+          name: investorName,
+          account_type: 'Individual',
+          email: 'investor@example.com',
+          phone: '',
+          registration_date: new Date().toISOString().split('T')[0]
+        };
+
+        // Check if investor exists in database
+        const allInvestors = db.getAll();
+        const exists = allInvestors.find(inv => inv.id == investorId);
+
+        if (!exists) {
+          // Add demo investor
+          db.add(demoInvestor);
+        }
+
+        loadProfile(); // Reload
+      }
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const data = {
+        name: document.getElementById('name').value,
+        account_type: document.getElementById('account_type').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        registration_date: document.getElementById('registration_date').value
+      };
+
+      db.update(investorId, data);
+
+      // Update session
+      sessionStorage.setItem('userFullName', data.name);
+
+      alert('Profile updated successfully!');
+      loadProfile();
+    });
+
+    function handleLogout() {
+      sessionStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    loadProfile();
+  </script>
+</body>
+
+</html>
